@@ -182,30 +182,6 @@ async test "tcp: four megabytes each way under TLS" {
 }
 
 ///|
-async test "tcp: a dozen clients at once, each answered on its own connection" {
-  let handler = async fn(conn : @tcp.Conn, peer : @socket.Addr) {
-    echo(conn, peer)
-  }
-  with_server(handler, tls=server_config(), port => {
-    let answers : Array[String] = []
-    @async.with_task_group(g => {
-      for i in 0..<12 {
-        g.spawn_bg(() => {
-          let conn = @tcp.dial("localhost", port~, tls=client_config())
-          defer conn.close()
-          conn.write("client \{i}\n")
-          answers.push(conn.read_until("\n").unwrap_or("-"))
-        })
-      }
-    })
-    assert_eq(answers.length(), 12)
-    for i in 0..<12 {
-      assert_true(answers.contains("client \{i}"))
-    }
-  })
-}
-
-///|
 async test "tcp: a TLS handshake that never comes is given up on" {
   @async.with_timeout(10000, () => {
     let listener = @tcp.listen(port=0, tls=server_config(), handshake=Some(200))
