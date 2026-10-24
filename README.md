@@ -30,7 +30,7 @@ TLS 1.3 in one go.
 
 | Package | What it does | State |
 |:--:|:--|:--:|
-| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the accept loop, the dialler, and a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it | **0.1.0** |
+| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the listener and accept loop, the dialler, and a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it | **0.1.1** |
 
 Planned, in order: one contract for a request, a response and a stream across
 HTTP/1, 2 and 3 with adapters for each; UDP and QUIC; the facade that
@@ -52,7 +52,18 @@ writers put whole messages on the wire and TLS records stay in sequence.
 
 `serve` listens on `127.0.0.1:12000` unless told otherwise: loopback, as uvicorn
 and Starlette default to, and the family's port. A connection whose handshake
-or handler fails is closed without stopping the server.
+or handler fails is closed without stopping the server, and a TLS handshake has
+60 seconds to finish, as in asyncio and hypercorn.
+
+`listen` is `serve` in two steps: it returns once the socket is bound, so a
+caller can connect at once or hand out the port; port 0 asks the system for a
+free one, which `addr()` reports. `accept` and `serve` then take connections.
+
+```moonbit
+let listener = @tcp.listen(port=0, tls~)
+let port = listener.addr().port()
+listener.serve((conn, peer) => ...)
+```
 
 The sockets are `moonbitlang/async`'s, which exist on the native and wasm
 backends; on js and wasm-gc the package is empty.

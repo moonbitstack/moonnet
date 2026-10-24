@@ -20,19 +20,19 @@ async fn echo(conn : @tcp.Conn, _ : @socket.Addr) -> Unit {
 }
 
 ///|
-/// Run `body` against a server on `port`, then stop the server. The whole run is bounded, so a
+/// Run `body` with the port of a server the system gave a free port, then stop the server. The
+/// listener is bound before `body` starts, so nothing races it; the whole run is bounded, so a
 /// hang fails the test instead of the suite.
 async fn with_server(
-  port : Int32,
   handler : async (@tcp.Conn, @socket.Addr) -> Unit,
-  body : async () -> Unit,
+  body : async (Int32) -> Unit,
   tls? : @tls.Server,
 ) -> Unit {
-  @async.with_timeout(10000, () => {
+  @async.with_timeout(120000, () => {
     @async.with_task_group(g => {
-      let server = g.spawn(() => @tcp.serve(handler, port~, tls?))
-      @async.sleep(100)
-      body()
+      let listener = @tcp.listen(port=0, tls?)
+      let server = g.spawn(() => listener.serve(handler))
+      body(listener.addr().port())
       server.cancel()
     })
   })
@@ -40,8 +40,8 @@ async fn with_server(
 
 ///|
 async test "tcp: a line goes out and comes back in the clear" {
-  with_server(12101, echo, () => {
-    let conn = @tcp.dial("127.0.0.1", port=12101)
+  with_server(echo, port => {
+    let conn = @tcp.dial("127.0.0.1", port~)
     defer conn.close()
     conn.write("hello\n")
     assert_eq(conn.read_until("\n"), Some("hello"))
@@ -58,10 +58,10 @@ async test "tcp: under TLS the same, with ALPN, SNI and the chain" {
     echo(conn, peer)
   }
   let tls = server_config(alpn=["h2", "http/1.1"])
-  with_server(12102, handler, tls~, () => {
+  with_server(handler, tls~, port => {
     let conn = @tcp.dial(
       "localhost",
-      port=12102,
+      port~,
       tls=client_config(alpn=["http/1.1"]),
     )
     defer conn.close()
@@ -81,8 +81,8 @@ async test "tcp: a large write crosses many records and arrives whole" {
   let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
     conn.write(conn.read_exactly(100000))
   }
-  with_server(12103, handler, tls=server_config(), () => {
-    let conn = @tcp.dial("localhost", port=12103, tls=client_config())
+  with_server(handler, tls=server_config(), port => {
+    let conn = @tcp.dial("localhost", port~, tls=client_config())
     defer conn.close()
     conn.write(big)
     assert_eq(conn.read_exactly(100000), big)
@@ -99,9 +99,9 @@ async test "tcp: a sniff for a preface does not consume it, and does not wait on
     verdicts.push((h2, first))
     conn.write("ok\n")
   }
-  with_server(12104, handler, () => {
+  with_server(handler, port => {
     for message in ["PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "GET /\n"] {
-      let conn = @tcp.dial("127.0.0.1", port=12104)
+      let conn = @tcp.dial("127.0.0.1", port~)
       defer conn.close()
       conn.write(message)
       assert_eq(conn.read_until("\n"), Some("ok"))
@@ -123,8 +123,8 @@ async test "tcp: two tasks writing at once put whole messages on the wire" {
       }
     })
   }
-  with_server(12105, handler, tls=server_config(), () => {
-    let conn = @tcp.dial("localhost", port=12105, tls=client_config())
+  with_server(handler, tls=server_config(), port => {
+    let conn = @tcp.dial("localhost", port~, tls=client_config())
     defer conn.close()
     let counts = Map::from_array([("a", 0), ("b", 0)])
     for _ in 0..<80 {
@@ -147,9 +147,9 @@ async test "tcp: a client that does not trust the chain refuses the connection" 
     reached.val = true
     conn.shutdown()
   }
-  with_server(12106, handler, tls=server_config(), () => {
+  with_server(handler, tls=server_config(), port => {
     let refused = try
-      @tcp.dial("localhost", port=12106, tls=client_config(roots=other_root))
+      @tcp.dial("localhost", port~, tls=client_config(roots=other_root))
     catch {
       _ => true
     } noraise {
@@ -161,4 +161,60 @@ async test "tcp: a client that does not trust the chain refuses the connection" 
     assert_true(refused)
   })
   assert_false(reached.val)
+}
+
+///|
+async test "tcp: four megabytes each way under TLS" {
+  let size = 4 << 20
+  let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
+    let got = conn.read_exactly(size)
+    conn.write(got)
+  }
+  with_server(handler, tls=server_config(), port => {
+    let conn = @tcp.dial("localhost", port~, tls=client_config())
+    defer conn.close()
+    let data = Bytes::makei(size, i => (i * 7 % 251).to_byte())
+    conn.write(data)
+    assert_true(conn.read_exactly(size) == data)
+  })
+}
+
+///|
+async test "tcp: a dozen clients at once, each answered on its own connection" {
+  let handler = async fn(conn : @tcp.Conn, peer : @socket.Addr) {
+    echo(conn, peer)
+  }
+  with_server(handler, tls=server_config(), port => {
+    let answers : Array[String] = []
+    @async.with_task_group(g => {
+      for i in 0..<12 {
+        g.spawn_bg(() => {
+          let conn = @tcp.dial("localhost", port~, tls=client_config())
+          defer conn.close()
+          conn.write("client \{i}\n")
+          answers.push(conn.read_until("\n").unwrap_or("-"))
+        })
+      }
+    })
+    assert_eq(answers.length(), 12)
+    for i in 0..<12 {
+      assert_true(answers.contains("client \{i}"))
+    }
+  })
+}
+
+///|
+async test "tcp: a TLS handshake that never comes is given up on" {
+  @async.with_timeout(10000, () => {
+    let listener = @tcp.listen(port=0, tls=server_config(), handshake=Some(200))
+    defer listener.close()
+    let silent = @tcp.dial("127.0.0.1", port=listener.addr().port())
+    defer silent.close()
+    let accepted = try listener.accept() catch {
+      _ => false
+    } noraise {
+      _ => true
+    }
+    assert_false(accepted)
+  })
 }

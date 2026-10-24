@@ -17,6 +17,11 @@ struct Conn {
 }
 
 ///|
+/// How much is read from the socket at once: a whole TLS record, 2^14 octets and the 256 of
+/// expansion RFC 8446 §5.2 allows. The async default reads a kibibyte at a time.
+let chunk : Int32 = 16384 + 256
+
+///|
 fn Conn::new(sock : @socket.Tcp, tls : @tls.Conn?) -> Conn {
   {
     sock,
@@ -82,7 +87,9 @@ async fn Conn::handshake(self : Conn) -> Unit {
   guard self.tls is Some(tls) else { return }
   self.flush()
   while !tls.is_connected() {
-    guard self.sock.read_some() is Some(data) else { raise @io.ReaderClosed }
+    guard self.sock.read_some(max_len=chunk) is Some(data) else {
+      raise @io.ReaderClosed
+    }
     self.receive(tls, data)
   }
 }
@@ -110,10 +117,10 @@ async fn Conn::flush(self : Conn) -> Unit {
 ///|
 /// The next run of the peer's plaintext; None at the end of its stream.
 async fn Conn::next(self : Conn) -> Bytes? {
-  guard self.tls is Some(tls) else { return self.sock.read_some() }
+  guard self.tls is Some(tls) else { return self.sock.read_some(max_len=chunk) }
   let mut plain = tls.read()
   while plain.length() == 0 && !tls.is_closed() {
-    guard self.sock.read_some() is Some(data) else { break }
+    guard self.sock.read_some(max_len=chunk) is Some(data) else { break }
     self.receive(tls, data)
     plain = tls.read()
   }

@@ -10,11 +10,15 @@ import {
 // Values
 pub async fn dial(String, port~ : Int32, tls? : @tls.Client, now? : Int64) -> Conn
 
+pub let handshake : Int32
+
 pub let host : String
+
+pub async fn listen(host? : String, port? : Int32, tls? : @tls.Server, reuse_addr? : Bool, handshake? : Int32?) -> Listener
 
 pub let port : Int32
 
-pub async fn serve(async (Conn, @socket.Addr) -> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool) -> Unit
+pub async fn serve(async (Conn, @socket.Addr) -> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool, handshake? : Int32?) -> Unit
 
 // Errors
 
@@ -45,6 +49,12 @@ pub async fn Conn::write_once(Self, Bytes, offset~ : Int32, len~ : Int32) -> Int
 pub async fn Conn::write_reader(Self, &@io.Reader) -> Unit
 pub impl @io.Reader for Conn
 pub impl @io.Writer for Conn
+
+type Listener
+pub async fn Listener::accept(Self) -> (Conn, @socket.Addr)
+pub fn Listener::addr(Self) -> @socket.Addr
+pub fn Listener::close(Self) -> Unit
+pub async fn Listener::serve(Self, async (Conn, @socket.Addr) -> Unit, limit? : Int32) -> Unit
 
 // Type aliases
 

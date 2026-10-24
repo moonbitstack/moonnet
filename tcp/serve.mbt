@@ -11,29 +11,78 @@ pub let host : String = "127.0.0.1"
 pub let port : Int32 = 12000
 
 ///|
-/// Accept connections on `host:port` and run `handler` on each with the peer's address, after the
-/// TLS handshake when `tls` is given. When the handler returns, a TLS connection is shut down with
-/// a close_notify. A connection whose handshake fails, or whose handler raises, is closed without
-/// stopping the server. Runs until cancelled.
-///
-/// `limit` caps the connections served at once; the rest wait in the listen queue. `reuse_addr`
-/// lets a restarted server bind while the old socket lingers in TIME_WAIT, as uvicorn does.
-pub async fn serve(
-  handler : async (Conn, @socket.Addr) -> Unit,
+/// How long a TLS handshake may take, in milliseconds: asyncio's and hypercorn's 60 seconds. A
+/// peer that connects and never finishes holds a connection slot until then.
+pub let handshake : Int32 = 60000
+
+///|
+/// A bound, listening socket. Connections queue from the moment `listen` returns, so a caller
+/// can connect to it, or hand its port out, without racing the server.
+struct Listener {
+  server : @socket.TcpServer
+  tls : @tls.Server?
+  handshake : Int32?
+}
+
+///|
+/// Bind `host:port` and listen, for TLS connections when `tls` is given. Port 0 asks the system
+/// for a free one; `addr` says which. `reuse_addr` lets a restarted server bind while the old
+/// socket lingers in TIME_WAIT, as uvicorn does. `handshake` bounds each TLS handshake; `None`
+/// waits for ever.
+pub async fn listen(
   host~ : String = host,
   port~ : Int32 = port,
   tls? : @tls.Server,
-  limit? : Int32,
   reuse_addr~ : Bool = true,
+  handshake~ : Int32? = Some(handshake),
+) -> Listener {
+  let server = @socket.TcpServer(
+    @socket.Addr::parse(join(host, port)),
+    reuse_addr~,
+  )
+  { server, tls, handshake, }
+}
+
+///|
+/// The address listened on; with port 0 asked for, the port the system chose.
+pub fn Listener::addr(self : Listener) -> @socket.Addr {
+  self.server.addr
+}
+
+///|
+/// A connection as the handler gets it: TLS done within the handshake bound, when there is TLS.
+async fn Listener::open(self : Listener, sock : @socket.Tcp) -> Conn {
+  guard self.tls is Some(config) else { return Conn::plain(sock) }
+  match self.handshake {
+    Some(ms) => @async.with_timeout(ms, () => Conn::server(sock, config))
+    None => Conn::server(sock, config)
+  }
+}
+
+///|
+/// The next connection and its peer's address, after the TLS handshake when there is TLS. A
+/// handshake that fails or runs out of time raises, with the socket closed.
+pub async fn Listener::accept(self : Listener) -> (Conn, @socket.Addr) {
+  let (sock, peer) = self.server.accept()
+  errdefer sock.close()
+  (self.open(sock), peer)
+}
+
+///|
+/// Run `handler` on each connection with the peer's address. When the handler returns, a TLS
+/// connection is shut down with a close_notify. A connection whose handshake fails, or whose
+/// handler raises, is closed without stopping the server. Runs until cancelled, then closes the
+/// listener.
+///
+/// `limit` caps the connections served at once; the rest wait in the listen queue.
+pub async fn Listener::serve(
+  self : Listener,
+  handler : async (Conn, @socket.Addr) -> Unit,
+  limit? : Int32,
 ) -> Unit {
-  let addr = @socket.Addr::parse(join(host, port))
-  let server = @socket.TcpServer(addr, reuse_addr~)
-  server.run_forever(
+  self.server.run_forever(
     (sock, peer) => {
-      let conn = match tls {
-        Some(config) => Conn::server(sock, config)
-        None => Conn::plain(sock)
-      }
+      let conn = self.open(sock)
       handler(conn, peer)
       conn.shutdown() catch {
         _ => ()
@@ -41,6 +90,27 @@ pub async fn serve(
     },
     max_connections?=limit,
   )
+}
+
+///|
+/// Stop listening.
+pub fn Listener::close(self : Listener) -> Unit {
+  self.server.close()
+}
+
+///|
+/// `listen`, then `serve`: accept connections on `host:port` and run `handler` on each until
+/// cancelled.
+pub async fn serve(
+  handler : async (Conn, @socket.Addr) -> Unit,
+  host~ : String = host,
+  port~ : Int32 = port,
+  tls? : @tls.Server,
+  limit? : Int32,
+  reuse_addr~ : Bool = true,
+  handshake~ : Int32? = Some(handshake),
+) -> Unit {
+  listen(host~, port~, tls?, reuse_addr~, handshake~).serve(handler, limit?)
 }
 
 ///|

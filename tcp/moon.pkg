@@ -30,6 +30,7 @@ options(
     "conn.mbt": [ "native", "wasm" ],
     "serve.mbt": [ "native", "wasm" ],
     "tcp_test.mbt": [ "native", "wasm" ],
+    "stress_test.mbt": [ "native" ],
     "fixtures_test.mbt": [ "native", "wasm" ],
   },
 )
