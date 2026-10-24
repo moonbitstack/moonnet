@@ -95,7 +95,9 @@ async test "tcp: a sniff for a preface does not consume it, and does not wait on
   let verdicts : Array[(Bool, String)] = []
   let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
     let h2 = conn.starts_with(preface[:])
-    let first = conn.read_until("\n").unwrap_or("")
+    // A connection that sends nothing is not one of ours: a racing connect the dialler
+    // closed, as a health check or a port scan would.
+    guard conn.read_until("\n") is Some(first) else { return }
     verdicts.push((h2, first))
     conn.write("ok\n")
   }
