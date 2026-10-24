@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 ///|
-/// The command this repository installs.
-///
-///     moon run bin
 #coverage.skip
 fn main {
-  println(@lib.greet("moonbit"))
+  println("the tour opens sockets: run it on the native or wasm backend")
 }

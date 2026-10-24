@@ -2,5 +2,20 @@
 pkgtype(kind: "executable")
 
 import {
-  "moonbitstack/moonnet/lib",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moontls/tls",
+  "moonbitstack/mooncred/x509",
+  "moonbitstack/mooncrypt/sign/ecdsa",
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "moonbitlang/core/env",
 }
+
+warnings = "-29"
+
+options(
+  targets: {
+    "tour.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)

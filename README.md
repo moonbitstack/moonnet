@@ -3,18 +3,59 @@
 The networking front door: the wire formats under one import, and the
 connections that carry them.
 
-> **Status: planned.** The repository is set up; nothing is
-> implemented yet.
-
 `moonhttp`, `moontls` and `moonquic` are the formats, and they touch no socket.
-This is what sits above them: the same names re-exported so one import is enough,
-and the connection layer that makes a request travel.
+This is what sits above them: the connection layer that puts them on a socket,
+and in time the same names re-exported so one import is enough.
 
-| Identity | What it does |
+```moonbit
+// A TLS server: the handshake is done before the handler sees the connection.
+let tls = @tls.Server::new(@x509.pems(cert_pem), @x509.PrivateKey::pem(key_pem), alpn=["h2", "http/1.1"])
+@tcp.serve(tls~, (conn, peer) => {
+  while conn.read_until("\n") is Some(line) {
+    conn.write(line + "\n")
+  }
+})
+
+// A client: resolved, connected, the chain judged against the roots.
+let conn = @tcp.dial("example.com", port=443, tls=@tls.Client::new(@roots.mozilla(), alpn=["http/1.1"]))
+conn.write("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+```
+
+`Conn` is an `@io.Reader` and an `@io.Writer` whether it is encrypted or not,
+so code written against the async stream traits serves both. Run
+`moon run examples/tour --target native` for a server and a client talking over
+TLS 1.3 in one go.
+
+## Packages
+
+| Package | What it does | State |
+|:--:|:--|:--:|
+| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the accept loop, the dialler, and a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it | **0.1.0** |
+
+Planned, in order: one contract for a request, a response and a stream across
+HTTP/1, 2 and 3 with adapters for each; UDP and QUIC; the facade that
+re-exports the three format libraries.
+
+## The connection
+
+|  | |
 |:--|:--|
-| Facade | `pub using` re-exports the three libraries unchanged — no renaming, no wrapping |
-| Connections | Sockets, the handshake, the retry: what the format libraries deliberately leave out |
-| One vocabulary | A request, a response and a stream mean the same thing across HTTP/1, 2 and 3 |
+| `Conn::plain(sock)` | A socket in the clear |
+| `Conn::server(sock, config)` | The server side of TLS, returned after the handshake |
+| `Conn::client(sock, config, host)` | The client side, returned after the server's chain is judged |
+| `starts_with(prefix)` | Whether the stream opens with `prefix`; reads only as far as the first byte that differs |
+| `alpn()`, `server_name()`, `peer()` | What the handshake settled; `None` and empty in the clear |
+| `shutdown()`, `close()` | close_notify, then the socket |
+
+One task may read while another writes. Writes are serialised, so concurrent
+writers put whole messages on the wire and TLS records stay in sequence.
+
+`serve` listens on `127.0.0.1:12000` unless told otherwise: loopback, as uvicorn
+and Starlette default to, and the family's port. A connection whose handshake
+or handler fails is closed without stopping the server.
+
+The sockets are `moonbitlang/async`'s, which exist on the native and wasm
+backends; on js and wasm-gc the package is empty.
 
 ## Install
 
