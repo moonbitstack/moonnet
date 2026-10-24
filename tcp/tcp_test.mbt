@@ -70,6 +70,7 @@ async test "tcp: under TLS the same, with ALPN, SNI and the chain" {
     assert_true(conn.is_tls())
     assert_eq(conn.alpn(), Some("http/1.1"))
     assert_eq(conn.peer().length(), 1)
+    assert_true(conn.tls().map(t => t.suite() is Some(_)).unwrap_or(false))
     conn.shutdown()
   })
   assert_eq(seen.val, (Some("http/1.1"), Some("localhost")))

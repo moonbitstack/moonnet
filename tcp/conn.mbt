@@ -237,6 +237,13 @@ pub fn Conn::is_tls(self : Conn) -> Bool {
 }
 
 ///|
+/// The TLS connection underneath, for what the accessors here do not say: the suite, the key
+/// update, the refusal reason. None in the clear.
+pub fn Conn::tls(self : Conn) -> @tls.Conn? {
+  self.tls
+}
+
+///|
 /// The application protocol ALPN settled on (RFC 7301). None in the clear.
 pub fn Conn::alpn(self : Conn) -> String? {
   self.tls.bind(t => t.alpn())
