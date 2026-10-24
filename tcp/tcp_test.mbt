@@ -27,10 +27,11 @@ async fn with_server(
   handler : async (@tcp.Conn, @socket.Addr) -> Unit,
   body : async (Int32) -> Unit,
   tls? : @tls.Server,
+  cleartext? : Bool,
 ) -> Unit {
   @async.with_timeout(120000, () => {
     @async.with_task_group(g => {
-      let listener = @tcp.listen(port=0, tls?)
+      let listener = @tcp.listen(port=0, tls?, cleartext?)
       let server = g.spawn(() => listener.serve(handler))
       body(listener.addr().port())
       server.cancel()
@@ -196,4 +197,58 @@ async test "tcp: a TLS handshake that never comes is given up on" {
     }
     assert_false(accepted)
   })
+}
+
+///|
+async test "tcp: with cleartext on, one TLS port serves TLS and the clear" {
+  let kinds : Array[Bool] = []
+  let handler = async fn(conn : @tcp.Conn, peer : @socket.Addr) {
+    kinds.push(conn.is_tls())
+    echo(conn, peer)
+  }
+  with_server(handler, tls=server_config(), cleartext=true, port => {
+    let plain = @tcp.dial("127.0.0.1", port~)
+    plain.write("clear\n")
+    assert_eq(plain.read_until("\n"), Some("clear"))
+    plain.close()
+    let secure = @tcp.dial("localhost", port~, tls=client_config())
+    secure.write("secure\n")
+    assert_eq(secure.read_until("\n"), Some("secure"))
+    secure.shutdown()
+    secure.close()
+  })
+  assert_eq(kinds, [false, true])
+}
+
+///|
+async test "tcp: a TLS listener without cleartext does not serve the clear" {
+  with_server(echo, tls=server_config(), port => {
+    let plain = @tcp.dial("127.0.0.1", port~)
+    defer plain.close()
+    plain.write("clear\n")
+    let answer = plain.read_until("\n") catch { _ => None }
+    // What comes back, if anything, is the alert that ends the handshake, never the echo.
+    assert_false(answer is Some("clear"))
+  })
+}
+
+///|
+async test "tcp: secure on a connection that is TLS already is refused" {
+  let refused : Array[Bool] = []
+  let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
+    let again = conn.secure(server_config()) catch {
+      @tcp.Secured => {
+        refused.push(true)
+        conn
+      }
+      e => raise e
+    }
+    again.write("done\n")
+  }
+  with_server(handler, tls=server_config(), port => {
+    let conn = @tcp.dial("localhost", port~, tls=client_config())
+    defer conn.close()
+    assert_eq(conn.read_until("\n"), Some("done"))
+  })
+  assert_eq(refused, [true])
 }

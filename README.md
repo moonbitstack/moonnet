@@ -30,7 +30,7 @@ TLS 1.3 in one go.
 
 | Package | What it does | State |
 |:--:|:--|:--:|
-| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the listener and accept loop, the dialler, and a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it | **0.1.1** |
+| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the listener and accept loop, the dialler, a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it, and TLS and the clear on one port | **0.1.3** |
 
 Planned, in order: one contract for a request, a response and a stream across
 HTTP/1, 2 and 3 with adapters for each; UDP and QUIC; the facade that
@@ -44,6 +44,8 @@ re-exports the three format libraries.
 | `Conn::server(sock, config)` | The server side of TLS, returned after the handshake |
 | `Conn::client(sock, config, host)` | The client side, returned after the server's chain is judged |
 | `starts_with(prefix)` | Whether the stream opens with `prefix`; reads only as far as the first byte that differs |
+| `opens_tls()` | Whether the stream opens with a TLS handshake record, without consuming it |
+| `secure(config)` | The server side of TLS on a connection still in the clear, starting from what a sniff read ahead |
 | `alpn()`, `server_name()`, `peer()` | What the handshake settled; `None` and empty in the clear |
 | `shutdown()`, `close()` | close_notify, then the socket |
 
@@ -64,6 +66,8 @@ let listener = @tcp.listen(port=0, tls~)
 let port = listener.addr().port()
 listener.serve((conn, peer) => ...)
 ```
+
+`listen(tls~, cleartext=true)` serves TLS and the clear on one port: a connection that opens with a TLS handshake record is secured, any other stays in the clear. Without it a TLS listener takes TLS only.
 
 The sockets are `moonbitlang/async`'s, which exist on the native and wasm
 backends; on js and wasm-gc the package is empty.

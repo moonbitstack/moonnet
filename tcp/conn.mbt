@@ -72,6 +72,46 @@ pub async fn Conn::client(
 }
 
 ///|
+/// What a connection will not do.
+pub(all) suberror Refused {
+  /// `secure` on a connection that is TLS already.
+  Secured
+} derive(Eq, Debug)
+
+///|
+pub extend Refused with Eq::{equal, not_equal}
+
+///|
+pub extend Refused with Debug::{to_repr}
+
+///|
+/// Run the server side of a TLS handshake on a connection that is still in the clear, starting
+/// from what a sniff has already read ahead, and return the TLS connection once it is done. This
+/// is how one port serves TLS and the clear: look with `opens_tls`, then secure the ones that do.
+///
+/// A connection that is already TLS raises `Refused::Secured`.
+pub async fn Conn::secure(
+  self : Conn,
+  config : @tls.Server,
+  rand? : (Int32) -> Bytes,
+) -> Conn {
+  guard self.tls is None else { raise Secured }
+  let tls = @tls.Conn::server(config, rand=rand.unwrap_or(entropy))
+  let ahead = self.ahead[self.at:]
+  if ahead.length() > 0 {
+    tls.receive(ahead)
+  }
+  Conn::new(self.sock, Some(tls))..handshake()
+}
+
+///|
+/// Whether the peer's stream opens with a TLS handshake record (RFC 8446 §5.1, content type 22),
+/// without consuming it. No HTTP/1.1 method or HTTP/2 preface starts with that octet.
+pub async fn Conn::opens_tls(self : Conn) -> Bool {
+  self.starts_with(b"\x16"[:])
+}
+
+///|
 fn entropy(n : Int32) -> Bytes {
   guard @env.rand(n) is Some(bytes) else { abort("no system entropy") }
   bytes

@@ -22,6 +22,7 @@ struct Listener {
   server : @socket.TcpServer
   tls : @tls.Server?
   handshake : Int32?
+  cleartext : Bool
 }
 
 ///|
@@ -29,18 +30,23 @@ struct Listener {
 /// for a free one; `addr` says which. `reuse_addr` lets a restarted server bind while the old
 /// socket lingers in TIME_WAIT, as uvicorn does. `handshake` bounds each TLS handshake; `None`
 /// waits for ever.
+///
+/// `cleartext` lets a TLS listener take connections in the clear too, on the same port: one that
+/// opens with a TLS handshake record is served TLS, any other is left in the clear. Off, a TLS
+/// listener takes TLS only.
 pub async fn listen(
   host~ : String = host,
   port~ : Int32 = port,
   tls? : @tls.Server,
   reuse_addr~ : Bool = true,
   handshake~ : Int32? = Some(handshake),
+  cleartext~ : Bool = false,
 ) -> Listener {
   let server = @socket.TcpServer(
     @socket.Addr::parse(join(host, port)),
     reuse_addr~,
   )
-  { server, tls, handshake, }
+  { server, tls, handshake, cleartext, }
 }
 
 ///|
@@ -53,9 +59,20 @@ pub fn Listener::addr(self : Listener) -> @socket.Addr {
 /// A connection as the handler gets it: TLS done within the handshake bound, when there is TLS.
 async fn Listener::open(self : Listener, sock : @socket.Tcp) -> Conn {
   guard self.tls is Some(config) else { return Conn::plain(sock) }
+  let open = async fn() {
+    if !self.cleartext {
+      return Conn::server(sock, config)
+    }
+    let conn = Conn::plain(sock)
+    if conn.opens_tls() {
+      conn.secure(config)
+    } else {
+      conn
+    }
+  }
   match self.handshake {
-    Some(ms) => @async.with_timeout(ms, () => Conn::server(sock, config))
-    None => Conn::server(sock, config)
+    Some(ms) => @async.with_timeout(ms, open)
+    None => open()
   }
 }
 
