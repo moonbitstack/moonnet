@@ -202,9 +202,12 @@ async test "tcp: a TLS handshake that never comes is given up on" {
 ///|
 async test "tcp: with cleartext on, one TLS port serves TLS and the clear" {
   let kinds : Array[Bool] = []
-  let handler = async fn(conn : @tcp.Conn, peer : @socket.Addr) {
+  let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
+    // Only connections that say something count: the dialler's racing connect may arrive as one
+    // that closes without a byte.
+    guard conn.read_until("\n") is Some(line) else { return }
     kinds.push(conn.is_tls())
-    echo(conn, peer)
+    conn.write(line + "\n")
   }
   with_server(handler, tls=server_config(), cleartext=true, port => {
     let plain = @tcp.dial("127.0.0.1", port~)
