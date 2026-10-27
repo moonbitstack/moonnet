@@ -1,4 +1,4 @@
-// Everything this repository does, in one run: `moon run examples/tour`.
+// Everything this repository does, in one run: `moon run src/examples/tour`.
 pkgtype(kind: "executable")
 
 import {

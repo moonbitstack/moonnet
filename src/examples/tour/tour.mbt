@@ -4,7 +4,7 @@
 ///|
 /// A TLS echo server on the family's port and a client that talks to it, in one run:
 ///
-///     moon run examples/tour --target native
+///     moon run src/examples/tour --target native
 ///
 /// The certificate is made on the spot and has no names in it, so the client pins it instead of
 /// judging it against roots.

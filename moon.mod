@@ -18,3 +18,5 @@ import {
   "moonbitstack/mooncrypt@0.4.2",
   "moonbitlang/async@0.22.5",
 }
+
+source = "src"

@@ -1,4 +1,4 @@
-"""Write tcp/fixtures_test.mbt: a root, a localhost server certificate under it, its key, and a
+"""Write src/tcp/fixtures_test.mbt: a root, a localhost server certificate under it, its key, and a
 second root that trusts nothing here.
 
 Issued by Python's `cryptography` (OpenSSL); rerun after changing a fixture.
@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
-OUT = pathlib.Path(__file__).resolve().parent.parent / "tcp" / "fixtures_test.mbt"
+OUT = pathlib.Path(__file__).resolve().parent.parent / "src" / "tcp" / "fixtures_test.mbt"
 START = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
 END = dt.datetime(2040, 1, 1, tzinfo=dt.timezone.utc)
 

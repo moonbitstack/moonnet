@@ -23,7 +23,7 @@ conn.write("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
 
 `Conn` is an `@io.Reader` and an `@io.Writer` whether it is encrypted or not,
 so code written against the async stream traits serves both. Run
-`moon run examples/tour --target native` for a server and a client talking over
+`moon run src/examples/tour --target native` for a server and a client talking over
 TLS 1.3 in one go.
 
 ## Packages
