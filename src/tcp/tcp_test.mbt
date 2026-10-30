@@ -255,3 +255,34 @@ async test "tcp: secure on a connection that is TLS already is refused" {
   })
   assert_eq(refused, [true])
 }
+
+///|
+async test "tcp: a connection that started in the clear turns TLS on both sides" {
+  let handler = async fn(conn : @tcp.Conn, _ : @socket.Addr) {
+    assert_eq(conn.read_until("\n"), Some("STARTTLS"))
+    conn.write("go ahead\n")
+    let secure = conn.secure(server_config())
+    while secure.read_until("\n") is Some(line) {
+      secure.write(line + "\n")
+    }
+  }
+  with_server(handler, port => {
+    let plain = @tcp.dial("localhost", port~)
+    plain.write("STARTTLS\n")
+    assert_eq(plain.read_until("\n"), Some("go ahead"))
+    let conn = plain.upgrade(client_config(), "localhost")
+    defer conn.close()
+    assert_true(conn.is_tls())
+    conn.write("private\n")
+    assert_eq(conn.read_until("\n"), Some("private"))
+    let again = try {
+      let _ = conn.upgrade(client_config(), "localhost")
+      false
+    } catch {
+      @tcp.Secured => true
+      e => raise e
+    }
+    assert_true(again)
+    conn.shutdown()
+  })
+}

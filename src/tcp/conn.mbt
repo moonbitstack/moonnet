@@ -74,7 +74,7 @@ pub async fn Conn::client(
 ///|
 /// What a connection will not do.
 pub(all) suberror Refused {
-  /// `secure` on a connection that is TLS already.
+  /// `secure` or `upgrade` on a connection that is TLS already.
   Secured
 } derive(Eq, Debug)
 
@@ -101,6 +101,30 @@ pub async fn Conn::secure(
   if ahead.length() > 0 {
     tls.receive(ahead)
   }
+  Conn::new(self.sock, Some(tls))..handshake()
+}
+
+///|
+/// Run the client side of a TLS handshake on a connection that is still in the clear, and
+/// return the TLS connection once it is done: the STARTTLS of SMTP, IMAP and POP3, after the
+/// server agreed. Octets already read ahead in the clear are dropped, since nothing protected
+/// them (RFC 3207 §4.2, from the client's side). `now` is as for `client`.
+///
+/// A connection that is already TLS raises `Refused::Secured`.
+pub async fn Conn::upgrade(
+  self : Conn,
+  config : @tls.Client,
+  host : String,
+  rand? : (Int32) -> Bytes,
+  now? : Int64,
+) -> Conn {
+  guard self.tls is None else { raise Secured }
+  let tls = @tls.Conn::client(
+    config,
+    host,
+    rand=rand.unwrap_or(entropy),
+    now=now.unwrap_or_else(clock),
+  )
   Conn::new(self.sock, Some(tls))..handshake()
 }
 

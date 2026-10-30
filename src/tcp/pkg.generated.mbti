@@ -54,6 +54,7 @@ pub fn Conn::server_name(Self) -> String?
 pub async fn Conn::shutdown(Self) -> Unit
 pub async fn Conn::starts_with(Self, BytesView) -> Bool
 pub fn Conn::tls(Self) -> @tls.Conn?
+pub async fn Conn::upgrade(Self, @tls.Client, String, rand? : (Int32) -> Bytes, now? : Int64) -> Self
 pub async fn Conn::write(Self, &@io.Data) -> Unit
 pub async fn Conn::write_once(Self, Bytes, offset~ : Int32, len~ : Int32) -> Int32
 pub async fn Conn::write_reader(Self, &@io.Reader) -> Unit
