@@ -30,7 +30,7 @@ TLS 1.3 in one go.
 
 | Package | What it does | State |
 |:--:|:--|:--:|
-| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the listener and accept loop, the dialler, a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it, and TLS and the clear on one port | **0.1.3** |
+| `tcp` | TCP and TLS over TCP: a connection that reads and writes the same either way, the listener and accept loop, the dialler, a sniff that tells an HTTP/2 preface from an HTTP/1.1 request without consuming it, TLS and the clear on one port, and either side of STARTTLS | **0.1.4** |
 
 Planned, in order: one contract for a request, a response and a stream across
 HTTP/1, 2 and 3 with adapters for each; UDP and QUIC; the facade that
