@@ -15,6 +15,8 @@ peer="$root/_build/native/debug/build/examples/tls-peer/tls-peer.exe"
 test -x "$peer" || { echo "build the peer first: moon build --target native"; exit 2; }
 fuzzer=$(cd "${TLSFUZZER:?set TLSFUZZER to a tlsfuzzer checkout}" && pwd)
 python=${PYTHON:-python3}
+# The scripts run from inside the checkout, so a relative interpreter path is made absolute.
+[[ "$python" != */* ]] || python="$(cd "$(dirname "$python")" && pwd)/$(basename "$python")"
 work=$(mktemp -d)
 trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$work"' EXIT
 cd "$work"
@@ -68,7 +70,11 @@ for entry in "${cases[@]}"; do
     pass=$((pass + 1)); printf 'PASS %-32s %s\n' "$name" "$totals"
   else
     fail=$((fail + 1)); printf 'FAIL %-32s %s\n' "$name" "$totals"
-    grep -E '^(AssertionError|\w*Error): ' "$log" | sort | uniq -c | sort -rn | head -5
+    if [ -n "$totals" ]; then
+      grep -E '^(AssertionError|\w*Error): ' "$log" | sort | uniq -c | sort -rn | head -5
+    else
+      tail -3 "$log"
+    fi
   fi
 done
 
