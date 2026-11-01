@@ -72,6 +72,21 @@ listener.serve((conn, peer) => ...)
 The sockets are `moonbitlang/async`'s, which exist on the native and wasm
 backends; on js and wasm-gc the package is empty.
 
+## Testing TLS against other implementations
+
+`src/examples/tls-peer` is a TLS peer built on `tcp`: a server that echoes lines or answers HTTP requests, and a client that sends one request and prints what came back. Two scripts drive it, and CI runs both on every push.
+
+| Script | What it checks |
+|:--:|:--|
+| `scripts/tls_interop.sh` | `moontls` against OpenSSL both ways: every key type, suite and group, record sizes and padding, KeyUpdate, tickets, ALPN, SNI, HelloRetryRequest, and the chains and ClientHellos that must be refused |
+| `scripts/tls_fuzz.sh` | The `moontls` server under [tlsfuzzer](https://github.com/tlsfuzzer/tlsfuzzer)'s TLS 1.3 scripts, about 3,600 cases of wrong lengths, wrong order and wrong values, each with the alert it is owed |
+
+```bash
+moon build --target native
+bash scripts/tls_interop.sh
+TLSFUZZER=path/to/tlsfuzzer PYTHON=python-with-tlslite-ng bash scripts/tls_fuzz.sh
+```
+
 ## Install
 
 ```bash

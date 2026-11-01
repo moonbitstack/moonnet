@@ -1,0 +1,26 @@
+// A TLS peer for interop runs: an echo or HTTP server and a one-request client over moontls,
+// for scripts/tls_interop.sh and scripts/tls_fuzz.sh to drive against OpenSSL and tlsfuzzer.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moontls/tls",
+  "moonbitstack/moontls/record",
+  "moonbitstack/moontls/ext",
+  "moonbitstack/mooncred/x509",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/socket",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/core/encoding/utf8",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "peer.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)

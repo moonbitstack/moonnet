@@ -61,3 +61,38 @@ jobs:
       - name: interfaces are up to date
         run: |
           moon info --target all && git diff --exit-code
+
+  tls:
+    name: TLS interop and conformance
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: install
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: build the peer
+        run: |
+          moon update
+          moon build --target native
+
+      - name: OpenSSL interop
+        run: bash scripts/tls_interop.sh
+
+      # Pinned so a change upstream cannot turn this red without a change here.
+      - name: tlsfuzzer
+        env:
+          TLSFUZZER_COMMIT: 5eebc4464e5197a7f7392fb9acda99cfc32441f7
+          TLSLITE_COMMIT: 7e95ea1a86c0d42d8d931ff14134d31f01ce1d76
+        run: |
+          git clone --quiet --filter=blob:none https://github.com/tlsfuzzer/tlsfuzzer _tlsfuzzer
+          git -C _tlsfuzzer checkout --quiet "$TLSFUZZER_COMMIT"
+          python3 -m venv _venv
+          _venv/bin/pip install --quiet "tlslite-ng @ git+https://github.com/tlsfuzzer/tlslite-ng@$TLSLITE_COMMIT" ecdsa
+          TLSFUZZER=_tlsfuzzer PYTHON=_venv/bin/python bash scripts/tls_fuzz.sh
