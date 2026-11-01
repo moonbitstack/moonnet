@@ -7,15 +7,16 @@
 /// what came back. Certificates and keys are PEM files; `scripts/tls_interop.sh`
 /// drives both against OpenSSL.
 ///
-///     tls-peer server <port> <chain.pem> <key.pem> [alpn=h2,http/1.1] [suites=aes128,...] [groups=x25519,...] [http]
-///     tls-peer client <host> <port> <roots.pem> [sni=name] [alpn=...] [suites=...] [groups=...]
-///                     [get=/path | send=text] [update]
+///     tls-peer server <port> <chain.pem> <key.pem> [versions=12,13] [alpn=h2,http/1.1] [suites=aes128,...]
+///                     [suites12=c02f,... | suites12=all] [schemes12=all] [groups=x25519,...] [http]
+///     tls-peer client <host> <port> <roots.pem> [sni=name] [alpn=...] [suites=...] [suites12=...]
+///                     [schemes12=all] [groups=...] [get=/path | send=text] [update]
 ///
 /// A server line `update` makes the server send a KeyUpdate before echoing it. With `http` the
 /// server answers each request head with one response in one write instead of echoing, which is
 /// what tlsfuzzer's conversations expect.
 /// The client prints `ok suite=... alpn=... bytes=N` and the first line of the
-/// answer, or `refused <why>`.
+/// answer, or `refused <why>`. A TLS 1.2 suite is written by its code in hex.
 fn options(args : ArrayView[String]) -> Map[String, String] {
   let out = Map([])
   for arg in args {
@@ -47,6 +48,52 @@ fn suites_of(names : Array[String]?) -> Array[@record.Suite]? {
 }
 
 ///|
+fn suites12_of(names : Array[String]?) -> Array[@record.Suite12]? {
+  names.map(list => {
+    match list {
+      ["all"] => @record.all12
+      codes =>
+        codes.map(text => {
+          let code = @string.parse_int(text, base=16) catch {
+            _ => abort("not a suite code: " + text)
+          }
+          match @record.Suite12::of(code) {
+            Some(suite) => suite
+            None => abort("no such suite: " + text)
+          }
+        })
+    }
+  })
+}
+
+///|
+fn schemes12_of(name : String?) -> Array[Int32]? {
+  name.map(_ => @tls.all_schemes12)
+}
+
+///|
+fn versions_of(names : Array[String]?) -> Array[@tls.Version]? {
+  names.map(list => {
+    list.map(name => {
+      match name {
+        "12" => @tls.Version::Tls12
+        "13" => Tls13
+        other => abort("no such version: " + other)
+      }
+    })
+  })
+}
+
+///|
+fn version_name(version : @tls.Version?) -> String {
+  match version {
+    Some(Tls12) => "1.2"
+    Some(Tls13) => "1.3"
+    None => "-"
+  }
+}
+
+///|
 fn groups_of(names : Array[String]?) -> Array[Int32]? {
   names.map(ns => {
     ns.map(n => {
@@ -68,12 +115,13 @@ fn groups_of(names : Array[String]?) -> Array[Int32]? {
 }
 
 ///|
-fn suite_name(suite : @record.Suite?) -> String {
-  match suite {
-    Some(Aes128Gcm) => "aes128"
-    Some(Aes256Gcm) => "aes256"
-    Some(ChaCha20Poly1305) => "chacha20"
-    None => "-"
+fn suite_name(tls : @tls.Conn?) -> String {
+  match (tls.bind(t => t.suite12()), tls.bind(t => t.suite())) {
+    (Some(suite), _) => suite.code.to_string(radix=16)
+    (_, Some(Aes128Gcm)) => "aes128"
+    (_, Some(Aes256Gcm)) => "aes256"
+    (_, Some(ChaCha20Poly1305)) => "chacha20"
+    _ => "-"
   }
 }
 
@@ -96,7 +144,10 @@ async fn serve(
     @x509.PrivateKey::pem(text_of(key)),
     alpn?=split(opts.get("alpn")),
     suites?=suites_of(split(opts.get("suites"))),
+    suites12?=suites12_of(split(opts.get("suites12"))),
+    schemes12?=schemes12_of(opts.get("schemes12")),
     groups?=groups_of(split(opts.get("groups"))),
+    versions?=versions_of(split(opts.get("versions"))),
   ) catch {
     e => abort("bad server configuration: \{e}")
   }
@@ -104,7 +155,7 @@ async fn serve(
   @tcp.serve(host="127.0.0.1", port~, tls=config, (conn, _) => {
     let tls = conn.tls()
     println(
-      "handshake suite=\{suite_name(tls.bind(t => t.suite()))} alpn=\{conn.alpn().unwrap_or("-")} sni=\{conn.server_name().unwrap_or("-")}",
+      "handshake suite=\{suite_name(tls)} alpn=\{conn.alpn().unwrap_or("-")} sni=\{conn.server_name().unwrap_or("-")}",
     )
     if opts.contains("http") {
       let mut head = 0
@@ -141,7 +192,10 @@ async fn connect(
     @x509.Roots::pem(text_of(roots)),
     alpn?=split(opts.get("alpn")),
     suites?=suites_of(split(opts.get("suites"))),
+    suites12?=suites12_of(split(opts.get("suites12"))),
+    schemes12?=schemes12_of(opts.get("schemes12")),
     groups?=groups_of(split(opts.get("groups"))),
+    versions?=versions_of(split(opts.get("versions"))),
   ) catch {
     e => abort("bad client configuration: \{e}")
   }
@@ -172,7 +226,7 @@ async fn connect(
     .unwrap_or("")
     .to_owned()
   println(
-    "ok suite=\{suite_name(conn.tls().bind(t => t.suite()))} alpn=\{conn.alpn().unwrap_or("-")} bytes=\{answer.length()} first=\{first}",
+    "ok version=\{version_name(conn.tls().bind(t => t.version()))} suite=\{suite_name(conn.tls())} alpn=\{conn.alpn().unwrap_or("-")} bytes=\{answer.length()} first=\{first}",
   )
   if !opts.contains("get") {
     conn.shutdown()
