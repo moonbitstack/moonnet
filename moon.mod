@@ -1,6 +1,6 @@
 name = "moonbitstack/moonnet"
 
-version = "0.1.8"
+version = "0.1.9"
 
 readme = "README.md"
 
@@ -8,7 +8,23 @@ repository = "https://github.com/moonbitstack/moonnet"
 
 license = "Apache-2.0"
 
-keywords = [ "http", "tls", "quic", "client", "server", "moonbit" ]
+keywords = [
+  "networking",
+  "network",
+  "socket",
+  "tcp",
+  "tls",
+  "https",
+  "connection",
+  "listener",
+  "dialer",
+  "client",
+  "server",
+  "async",
+  "http",
+  "quic",
+  "moonbit",
+]
 
 description = "Networking for MoonBit: connections, listeners and dialers over TCP, TLS and QUIC."
 
