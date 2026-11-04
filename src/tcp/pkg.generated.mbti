@@ -22,9 +22,10 @@ pub let port : Int32
 pub async fn serve(async (Conn, @socket.Addr) -> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool, handshake? : Int32?) -> Unit
 
 // Errors
+#derive(Eq, @debug.Debug)
 pub(all) suberror Refused {
   Secured
-} derive(Eq, @debug.Debug)
+}
 pub fn Refused::equal(Self, Self) -> Bool
 pub fn Refused::not_equal(Self, Self) -> Bool
 pub fn Refused::to_repr(Self) -> @debug.Repr

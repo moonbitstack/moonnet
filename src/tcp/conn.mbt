@@ -73,10 +73,11 @@ pub async fn Conn::client(
 
 ///|
 /// What a connection will not do.
+#derive(Eq, Debug)
 pub(all) suberror Refused {
   /// `secure` or `upgrade` on a connection that is TLS already.
   Secured
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Refused with Eq::{equal, not_equal}
