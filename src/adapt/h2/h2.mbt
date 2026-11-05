@@ -233,10 +233,16 @@ pub impl @spec.Conn for Conn with fn open(self, request) {
   self.flush()
   let opened : @spec.Stream = { id: stream, }
   match request.body {
-    @spec.Body::Bytes(bytes) =>
+    @spec.Body::Bytes(bytes) => {
       if bytes.length() > 0 {
         self.body(opened, bytes)
       }
+      // The head did not carry END_STREAM, so the body has to end the stream itself.
+      self.h2.end(stream) catch {
+        e => raise beyond(e)
+      }
+      self.flush()
+    }
     _ => ()
   }
   opened
