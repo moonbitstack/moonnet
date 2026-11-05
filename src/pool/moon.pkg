@@ -1,0 +1,24 @@
+// The connections kept for another exchange, grouped by what makes two connections
+// interchangeable: the host, the port and the protocol ALPN settled on.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonnet/tcp",
+  "moonbitlang/async",
+  "moonbitlang/async/cond_var",
+  "moonbitlang/core/env",
+}
+
+import {
+  "moonbitstack/moonnet/pool",
+  "moonbitstack/moonnet/tcp",
+  "moonbitlang/async",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: { "pool.mbt": [ "native", "wasm" ], "pool_test.mbt": [ "native" ] },
+)

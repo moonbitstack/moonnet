@@ -1,0 +1,79 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/pool"
+
+import {
+  "moonbitlang/async/cond_var",
+  "moonbitlang/core/debug",
+  "moonbitstack/moonnet/tcp",
+}
+
+// Values
+pub let defaults : Config
+
+// Errors
+#derive(Eq, @debug.Debug)
+pub(all) suberror Refused {
+  Busy
+  Closed
+  Failed(String)
+}
+pub fn Refused::equal(Self, Self) -> Bool
+pub fn Refused::not_equal(Self, Self) -> Bool
+pub fn Refused::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+#derive(Eq, @debug.Debug)
+pub(all) struct Config {
+  idle : Int32
+  max_idle : Int32
+  max_total : Int32
+  liveness : Liveness
+  wait : Int32
+}
+pub fn Config::equal(Self, Self) -> Bool
+pub fn Config::not_equal(Self, Self) -> Bool
+pub fn Config::to_repr(Self) -> @debug.Repr
+
+pub struct Idle {
+  conn : @tcp.Conn
+  until : Int64
+}
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Key {
+  host : String
+  port : Int32
+  alpn : String
+}
+pub fn Key::equal(Self, Self) -> Bool
+pub fn Key::new(String, Int32, alpn~ : String) -> Self
+pub fn Key::not_equal(Self, Self) -> Bool
+pub fn Key::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) enum Liveness {
+  None_
+  Peek
+}
+pub fn Liveness::equal(Self, Self) -> Bool
+pub fn Liveness::not_equal(Self, Self) -> Bool
+pub fn Liveness::to_repr(Self) -> @debug.Repr
+
+pub struct Pool {
+  dial : async (Key) -> @tcp.Conn
+  config : Config
+  mut idle : Map[String, Array[Idle]]
+  mut total : Int32
+  changed : @cond_var.Cond
+  mut closed : Bool
+}
+pub fn Pool::close(Self) -> Unit
+pub async fn Pool::get(Self, Key) -> @tcp.Conn raise Refused
+pub fn Pool::idle(Self, Key) -> Int32
+pub fn Pool::new(async (Key) -> @tcp.Conn, config? : Config) -> Self
+pub fn Pool::put(Self, Key, @tcp.Conn) -> Unit
+pub fn Pool::total(Self) -> Int32
+
+// Type aliases
+
+// Traits

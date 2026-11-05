@@ -142,6 +142,23 @@ pub async fn Conn::upgrade(
 }
 
 ///|
+/// Whether the connection is still worth using, asked without waiting: a peer that has
+/// closed is reported as gone, and a peer that said something while the connection sat idle
+/// is reported as there, with what it said kept for the next read.
+///
+/// `wait` bounds the look, in milliseconds. A pool asks this before handing a connection on;
+/// a connection that has never been read from yet is not one this can judge, so nothing here
+/// is reported before the peer has spoken or gone.
+pub async fn Conn::is_alive(self : Conn, wait~ : Int32 = 1) -> Bool {
+  let looked = @async.with_timeout_opt(wait, () => self.fill())
+  match looked {
+    // Octets or the end of the stream: either way the socket answered.
+    Some(filled) => filled
+    None => true
+  }
+}
+
+///|
 /// Whether the peer's stream opens with a TLS handshake record (RFC 8446 §5.1, content type 22),
 /// without consuming it. No HTTP/1.1 method or HTTP/2 preface starts with that octet.
 pub async fn Conn::opens_tls(self : Conn) -> Bool {
@@ -175,7 +192,9 @@ async fn Conn::handshake(self : Conn) -> Unit {
 /// Feed ciphertext in and send whatever it calls for: handshake messages, a key update in reply,
 /// the alert that ends the connection.
 async fn Conn::receive(self : Conn, tls : @tls.Conn, data : Bytes) -> Unit {
-  errdefer (self.flush() catch { _ => () })
+  // Protected, because this runs on the way out of a failure: a cancellation that arrives
+  // then would take the alert the peer is owed with it.
+  errdefer (@async.protect_from_cancel(() => self.flush()) catch { _ => () })
   tls.receive(data[:])
   self.flush()
 }

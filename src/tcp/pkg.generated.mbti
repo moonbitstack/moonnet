@@ -40,6 +40,7 @@ pub fn Conn::alpn(Self) -> String?
 pub async fn Conn::client(@socket.Tcp, @tls.Client, String, rand? : (Int32) -> Bytes, now? : Int64) -> Self
 pub fn Conn::close(Self) -> Unit
 pub async fn Conn::drop(Self, Int32) -> Int32
+pub async fn Conn::is_alive(Self, wait? : Int32) -> Bool
 pub fn Conn::is_tls(Self) -> Bool
 pub async fn Conn::opens_tls(Self) -> Bool
 pub fn Conn::peer(Self) -> Array[Bytes]
