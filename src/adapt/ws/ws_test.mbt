@@ -265,3 +265,45 @@ async test "ws: a close from the peer ends the read and keeps its code" {
     conn.close()
   })
 }
+
+///|
+async test "ws: a message that is not valid UTF-8 closes with 1007" {
+  let sent : Ref[Int32] = Ref(0)
+  let server = async fn(conn : @tcp.Conn) {
+    guard opened_with_accept(conn) else { return }
+    conn.write(
+      @frame.Frame::{
+        fin: true,
+        opcode: @frame.Opcode::Text,
+        payload: b"\xff\xfe",
+      }.encode(),
+    )
+    // The reply this test is about is one close frame, so its code is read off the octets
+    // rather than through the codec: a masked frame, key at 2, code at 6, big-endian.
+    let mut held = b""
+    while conn.read_some() is Some(bytes) {
+      held = held + bytes
+      if held.length() >= 8 && (held[0].to_int() & 0xff) == 0x88 {
+        let hi = (held[6].to_int() ^ held[2].to_int()) & 0xff
+        let lo = (held[7].to_int() ^ held[3].to_int()) & 0xff
+        sent.val = hi * 256 + lo
+        break
+      }
+    }
+    let _ = conn.read_some()
+  }
+  with_ws(server, port => {
+    let conn = @ws.client(@tcp.dial("127.0.0.1", port~), host="127.0.0.1")
+    let stream = conn.open(@spec.Request::new("GET", "/chat"))
+    let _ = conn.response(stream)
+    let refused = Ok(conn.next()) catch { e => Err(e) }
+    match refused {
+      Err(@spec.Refused::Malformed(why)) => assert_true(why.contains("UTF-8"))
+      _ => abort("a text message that is not UTF-8 was not refused")
+    }
+    // The server reads the close on its own task; give it the turn it needs before the verdict.
+    @async.sleep(100)
+    assert_eq(sent.val, 1007)
+    conn.close()
+  })
+}

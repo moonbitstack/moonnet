@@ -196,11 +196,14 @@ async fn Conn::decoded(self : Conn) -> @frame.Message? raise @spec.Refused {
   while self.held.length() > 0 {
     guard self.parse() is Some((frame, used)) else { return None }
     self.drop(used)
-    let step = self.reader.feed(frame) catch {
-      @frame.Refused::Protocol(why) => raise @spec.Refused::Malformed(why)
-      @frame.Refused::Payload(why) => raise @spec.Refused::Malformed(why)
-      @frame.Refused::Exceeded(limit~, got~) =>
-        raise @spec.Refused::Malformed("a message over \{limit} octets: \{got}")
+    let fed = Ok(self.reader.feed(frame)) catch { e => Err(e) }
+    let step = match fed {
+      Ok(step) => step
+      Err(e) => {
+        let (code, why) = refused(e)
+        self.fail(code, why)
+        raise @spec.Refused::Malformed(why)
+      }
     }
     match step.reply {
       Some(reply) => self.out(reply)
@@ -232,13 +235,52 @@ async fn Conn::out(
 }
 
 ///|
-/// The frame at the front of what is held, or `None` while it is not all there.
-fn Conn::parse(self : Conn) -> (@frame.Frame, Int32)? raise @spec.Refused {
-  @frame.decode(self.held[:], client=false) catch {
-    @frame.Refused::Protocol(why) => raise @spec.Refused::Malformed(why)
-    @frame.Refused::Payload(why) => raise @spec.Refused::Malformed(why)
+/// The code a refusal from the codec asks the session to close with (RFC 6455 §7.4.1): 1002 for
+/// a frame the protocol does not allow, 1007 for a payload that is not what its type says, and
+/// 1009 for one over the size this side takes.
+fn refused(e : Error) -> (Int32, String) {
+  match e {
+    @frame.Refused::Protocol(why) => (1002, why)
+    @frame.Refused::Payload(why) => (1007, why)
     @frame.Refused::Exceeded(limit~, got~) =>
-      raise @spec.Refused::Malformed("a frame over \{limit} octets: \{got}")
+      (1009, "a message over \{limit} octets: \{got}")
+    _ => (1002, "refused")
+  }
+}
+
+///|
+/// End the session with a code the peer can act on, which is what the protocol asks of a client
+/// that has read something it will not accept. The failure is reported to the caller as well;
+/// this is the peer's half of it.
+async fn Conn::fail(
+  self : Conn,
+  code : Int32,
+  why : String,
+) -> Unit raise @spec.Refused {
+  if self.closed {
+    return
+  }
+  self.closed = true
+  self.code = code
+  self.why = why
+  // Not caught: a session whose peer has gone cannot be told why, and the caller is about to
+  // hear about the failure either way.
+  self.frame(@frame.Opcode::Close, @frame.close(code, reason=why))
+}
+
+///|
+/// The frame at the front of what is held, or `None` while it is not all there.
+async fn Conn::parse(self : Conn) -> (@frame.Frame, Int32)? raise @spec.Refused {
+  let decoded = Ok(@frame.decode(self.held[:], client=false)) catch {
+    e => Err(e)
+  }
+  match decoded {
+    Ok(frame) => frame
+    Err(e) => {
+      let (code, why) = refused(e)
+      self.fail(code, why)
+      raise @spec.Refused::Malformed(why)
+    }
   }
 }
 
