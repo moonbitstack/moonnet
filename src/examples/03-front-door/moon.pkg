@@ -1,0 +1,17 @@
+// The front door on its own: one import opens the socket, serves it, and speaks over it. The
+// adapters are not named here, so nothing of theirs is linked.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet",
+  "moonbitlang/async",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)

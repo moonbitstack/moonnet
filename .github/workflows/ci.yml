@@ -54,6 +54,21 @@ jobs:
             fi
           done
 
+      # One import is meant to be enough for a program that only opens a socket, and nothing of
+      # the adapters should be linked for it. The link line is where that is visible.
+      - name: the front door links no adapter
+        if: runner.os == 'Linux'
+        run: |
+          moon build src/examples/03-front-door --target native
+          rsp="$(find _build/native/debug/build/examples/03-front-door -name '*.rsp')"
+          echo "link line: $rsp"
+          for bad in adapt moonhttp; do
+            if grep -aq "$bad" "$rsp"; then
+              echo "::error::the front door links $bad"
+              exit 1
+            fi
+          done
+
       - name: lint (fmt is clean)
         run: |
           moon fmt && git diff --exit-code
