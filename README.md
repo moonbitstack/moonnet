@@ -1,9 +1,11 @@
 # moonnet
 
+[Site](https://moonbitstack.github.io/moonnet/) · [Guide](https://moonbitstack.github.io/moonnet/guide.html) · [API](https://moonbitstack.github.io/moonnet/api.html) · [mooncakes](https://mooncakes.io/docs/moonbitstack/moonnet)
+
 The connection layer: one contract for a request and a reply, whatever carries it, and the
 sockets underneath.
 
-`moonhttp`, `moontls` and `moonquic` are the wire formats, and they touch no socket. This is
+The wire formats are pure state machines — bytes in, events out — and touch no socket. This is
 what puts them on one: TCP and UDP, TLS over TCP, QUIC over UDP, and an adapter for each
 protocol that turns it into the same `open` / `send` / `response` / `read`.
 
@@ -191,11 +193,41 @@ wasm-gc the packages that drive them are empty.
 |:--|:--|
 | `src/examples/tour` | a TLS server and a client talking over it in one run |
 | `src/examples/01-interop` | one client that speaks all four protocols through the contract, for driving against another server |
+| `src/examples/02-plug` | a connection implemented outside this library, run through the same helpers |
+| `src/examples/03-front-door` | the front door on its own: a listener and a client with one import |
+| `src/examples/04-ws-conformance` | the client end of a WebSocket conformance run, for a fuzzing server to drive |
 | `src/examples/tls-peer` | a TLS peer for interop runs against OpenSSL and tlsfuzzer |
 
 ```
 moon run src/examples/tour --target native
 ```
+
+## Conformance
+
+The adapters are clients, so the evidence is what they carry against implementations they did
+not write, over real sockets:
+
+| What | Against | Result |
+|:--|:--|:--|
+| HTTP/1.1 — a head, a declared-length body, a chunked body with trailers, a body to the close | two independent servers | all exchanges answered, bodies byte for byte |
+| HTTP/2 — preface, settings, one exchange per stream, flow control both ways | the same two | all exchanges answered; a reply over one window arrives whole |
+| HTTP/3 — QUIC handshake, settings with the QPACK table shut, one stream per exchange | both, where the server offers `h3` | all exchanges answered |
+| WebSocket — the upgrade, framing, ping and pong, close, invalid UTF-8, reserved bits | Autobahn's fuzzing server | 244 graded cases pass, 4 of them non-strict; no failures |
+| TLS 1.3 over TCP — handshake, certificate chain, alerts | OpenSSL, and tlsfuzzer | OpenSSL interop passes; tlsfuzzer runs in CI |
+
+`scripts/http_interop.sh` is the run behind the first four rows: it starts a server of this
+family and one in a container, and asks each of them for HTTP/1.1, HTTP/2 and HTTP/3, plus a
+WebSocket message. `scripts/ws_conformance.sh` is the fifth: it starts Autobahn's fuzzing
+server and plays its cases with this library's client, and the verdict is the server's report.
+Both are jobs in CI, on real sockets, on every push.
+
+The WebSocket run leaves out two sections of the suite: 9.\* measures throughput with messages
+from 64 KiB to 16 MiB, and 12.\* and 13.\* exercise permessage-deflate, which this adapter does
+not negotiate. The four non-strict cases are 6.4.1–6.4.4, where a message that is not valid
+UTF-8 is rejected when the message ends rather than at the first bad octet.
+
+h2spec and h3spec are conformance suites for servers; nothing here serves HTTP/2 or HTTP/3, so
+they do not apply to these adapters. The codecs underneath have their own conformance runs.
 
 ## Licence
 
