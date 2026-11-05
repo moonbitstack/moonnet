@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide · moonnet</title>
+<meta name="description" content="From an echo server to a pooled HTTP/3 client: connections, TLS, the contract, the four adapters, the pool and the datagram side of moonnet.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230C1116'/><path d='M6 11h20M6 21h20' stroke='%2340C8B4' stroke-width='2'/><circle cx='11' cy='11' r='2.4' fill='%23F0B357'/><circle cx='21' cy='21' r='2.4' fill='%23F0B357'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="nav__brand" href="index.html" aria-label="moonnet home">
+    <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M2 6h28M2 18h28" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="23" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    <span>moonnet</span>
+  </a>
+  <button class="nav__icon nav__menu" type="button" aria-label="Menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <nav class="nav__links">
+    <a class="nav__link" href="index.html">Home</a>
+    <a class="nav__link is-active" href="guide.html" aria-current="page">Guide</a>
+    <a class="nav__link" href="api.html">API</a>
+    <a class="nav__link" href="showcase.html">Showcase</a>
+    <a class="nav__link nav__link--ext" href="https://mooncakes.io/docs/moonbitstack/moonnet">mooncakes</a>
+    <a class="nav__icon" href="https://github.com/moonbitstack/moonnet" aria-label="GitHub repository" title="GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.69.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+    </a>
+    <button class="nav__icon nav__toggle" type="button" aria-label="Toggle theme" aria-pressed="false" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="main" class="wrap docs">
+  <aside class="toc" aria-label="Contents">
+    <a href="#install">Install</a>
+    <a href="#first">A first connection</a>
+    <a href="#tls">TLS and ALPN</a>
+    <a href="#contract">The contract</a>
+    <a href="#h1">HTTP/1.1</a>
+    <a href="#h2">HTTP/2</a>
+    <a href="#h3">HTTP/3</a>
+    <a href="#ws">WebSocket</a>
+    <a href="#pool">The pool</a>
+    <a href="#udp">Datagrams and QUIC</a>
+    <a href="#backends">Backends and errors</a>
+  </aside>
+
+  <div class="content">
+    <p class="eyebrow">Guide</p>
+    <h1 class="page-title">From a socket to a pool.</h1>
+    <p class="lead">Each step runs on its own, and every output below is what the code printed when it ran.</p>
+
+    <h2 id="install">Install</h2>
+    <p>Add the module, then import the packages you use. The front door brings the connection, the datagram socket and the contract; an adapter is named on its own.</p>
+    <!-- nocheck -->
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>shell</span><button class="copy" type="button">copy</button></div>
+<pre><code>moon add moonbitstack/moonnet</code></pre>
+    </div>
+    <!-- nocheck -->
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>moon.pkg</span><button class="copy" type="button">copy</button></div>
+<pre><code>import {
+  "moonbitstack/moonnet",
+  "moonbitstack/moonnet/adapt/h2",
+  "moonbitstack/moonnet/spec",
+}</code></pre>
+    </div>
+
+    <h2 id="first">A first connection</h2>
+    <p>A listener and a client in one program. The listener takes every connection on its own task, reads a line, writes it back, and stops when the peer closes. The client does the same from the other side.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>echo.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>async fn main {
+  @async.with_task_group(g =&gt; {
+    let serving = g.spawn(() =&gt; {
+      @tcp.serve((conn, _peer) =&gt; {
+        while conn.read_until("\n") is Some(line) {
+          conn.write(line + "\n")
+        }
+      }, port=12000)
+    })
+    let conn = @tcp.dial("127.0.0.1", port=12000)
+    conn.write("hello\n")
+    println(conn.read_until("\n").unwrap_or("-"))
+    conn.shutdown()
+    serving.cancel()
+  })
+}</code></pre>
+      <div class="out">hello</div>
+    </div>
+    <p><code>serve</code> listens on <code>127.0.0.1:12000</code> unless it is told otherwise, and one <code>Conn</code> may be read by one task while another writes: writes are serialised, so two tasks putting whole messages on the wire do not interleave their octets.</p>
+
+    <h2 id="tls">TLS and ALPN</h2>
+    <p>Give <code>dial</code> a client config and the connection is TLS 1.3 after the handshake; leave it out and the connection is in the clear. The config carries the ALPN list the server chooses from.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>tls.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let tls = @tls.Client::new(@roots.mozilla(), alpn=["h2", "http/1.1"])
+let conn = @tcp.dial("example.com", port=443, tls=tls)
+println(conn.alpn().unwrap_or("none"))   <span class="com">// h2</span></code></pre>
+      <div class="out">h2</div>
+    </div>
+    <p>The front door does the same in one call: the scheme decides whether TLS is used, the ALPN list is offered as given, and the chain is judged against Mozilla's roots unless you pass your own.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>connect.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let opened = @moonnet.connect("https://example.com/status", alpn=["h2", "http/1.1"])
+println(opened.alpn)     <span class="com">// h2</span>
+println(opened.target)   <span class="com">// /status</span></code></pre>
+      <div class="out">h2
+/status</div>
+    </div>
+
+    <h2 id="contract">The contract</h2>
+    <p>An exchange is a head and a body, in both directions, and everything above this library is written against that and nothing else.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>open(request)</code></td><td>send a head and whatever body came with it; the exchange is a <code>Stream</code></td></tr>
+          <tr><td><code>send(stream, bytes, end~)</code></td><td>more of a streamed request body; <code>end</code> marks the last of it</td></tr>
+          <tr><td><code>response(stream)</code></td><td>the reply's head, once the peer has sent it</td></tr>
+          <tr><td><code>read(stream)</code></td><td>the next run of the reply's body; <code>None</code> ends it</td></tr>
+          <tr><td><code>trailers(stream)</code></td><td>the fields that came after the body</td></tr>
+          <tr><td><code>is_ready()</code></td><td>whether another exchange may start now</td></tr>
+          <tr><td><code>kind()</code></td><td>the protocol ALPN settled on, for logs</td></tr>
+          <tr><td><code>close()</code></td><td>end the connection the way the protocol asks</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Two helpers cover the usual shape. <code>call</code> sends a request and reads the whole reply; <code>read_to_end</code> reads a body with a limit, so a peer cannot make the reader hold an unbounded amount.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>call.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/status"))
+println("\{response.status} \{body.length()}")
+
+<span class="com">// A body written after the exchange is open, in pieces of any length.</span>
+let stream = conn.open(
+  @spec.Request::new("POST", "/upload", body=@spec.Body::Streaming),
+)
+conn.send(stream, b"first,", end=false)
+conn.send(stream, b"last", end=true)
+let head = conn.response(stream)</code></pre>
+    </div>
+
+    <h2 id="h1">HTTP/1.1</h2>
+    <p>One exchange at a time, which is what the protocol carries. <code>is_ready</code> is false while one is in flight. A body is framed by a declared length, by chunks with their trailers, or by the close of the connection; a reply that stops short of its declared length raises instead of returning half a body.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>h1.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let conn = @h1.connect("example.com", port=443, tls=tls)
+let (response, body) = @spec.call(
+  conn,
+  @spec.Request::new("POST", "/echo", body=@spec.Body::Bytes(b"abcdefghijkl")),
+)
+println(conn.kind())      <span class="com">// http/1.1</span>
+println(response.status)  <span class="com">// 200</span>
+println(body)             <span class="com">// b"abcdefghijkl"</span>
+conn.close()</code></pre>
+      <div class="out">http/1.1
+200
+b"abcdefghijkl"</div>
+    </div>
+
+    <h2 id="h2">HTTP/2</h2>
+    <p>The preface and this side's settings go out when the connection opens. Every exchange takes its own stream, so a second request may start while the first is still being read — the replies arrive in whatever order the server sends them, and each is asked for by its own stream.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>h2.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let conn = @h2.connect("example.com", port=443, tls=tls)
+let first = conn.open(@spec.Request::new("GET", "/one"))
+let second = conn.open(@spec.Request::new("GET", "/two"))
+println(conn.is_ready())              <span class="com">// true</span>
+let one = conn.response(first)
+let two = conn.response(second)
+println("\{one.status} \{two.status}")  <span class="com">// 200 200</span>
+println(@spec.read_to_end(conn, first).length())</code></pre>
+    </div>
+    <p>Flow control is honoured in both directions: a request body goes out as the window allows and waits to be widened, and the octets read are handed back to the peer's window, so a reply larger than one window still arrives.</p>
+
+    <h2 id="h3">HTTP/3</h2>
+    <p>HTTP/3 runs on a QUIC connection over a datagram socket, so it needs TLS: the ALPN is <code>h3</code> and the handshake happens inside QUIC rather than on a TCP stream.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>h3.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let tls = @tls.Client::new(@roots.mozilla(), alpn=["h3"])
+let conn = @h3.connect("example.com", port=443, tls=tls)
+let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/"))
+println(conn.kind())      <span class="com">// h3</span>
+println(response.status)  <span class="com">// 200</span>
+conn.close()</code></pre>
+      <div class="out">h3
+200</div>
+    </div>
+    <p>Settings go out on a control stream with the QPACK dynamic table shut, so no reply can refer to a table entry this side does not have. A peer that says nothing for thirty seconds is given up on rather than waited for.</p>
+
+    <h2 id="ws">WebSocket</h2>
+    <p>The upgrade is the exchange: <code>open</code> sends the handshake, and <code>response</code> is the 101 with its accept checked against the key this side offered. After that a read yields whole messages, with fragments put back together.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>ws.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let ws = @ws.connect("wss://example.com/chat", tls=tls)
+let stream = ws.open(@spec.Request::new("GET", "/chat"))
+println(ws.response(stream).status)   <span class="com">// 101</span>
+
+ws.send_text("hello")
+match ws.next() {
+  Some(@frame.Message::Text(reply)) =&gt; println(reply)   <span class="com">// hello</span>
+  Some(@frame.Message::Close(status~, ..)) =&gt; println("closed \{status}")
+  _ =&gt; ()
+}</code></pre>
+      <div class="out">101
+hello</div>
+    </div>
+    <p>A ping from the server is answered on the way to the next message and never reaches the caller. <code>send</code> writes a binary message, because the contract's octets do not say whether they are text; <code>send_text</code> is the one that writes text. A close keeps its code and reason in <code>close_code</code> and <code>close_reason</code>.</p>
+
+    <h2 id="pool">The pool</h2>
+    <p>A connection is reused only for what it was opened for, so the key is the host, the port and the protocol ALPN settled on. Every knob is a field of <code>Config</code> with a published preset, so changing one does not mean guessing the rest.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>pool.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let pool = @pool.Pool::new(
+  key =&gt; @tcp.dial(key.host, port=key.port, tls=tls_for(key)),
+  config={ ..@pool.defaults, idle: 60000 },
+)
+let key = @pool.Key::new("example.com", 443, alpn="h2")
+let conn = pool.get(key)
+<span class="com">// ... one connection's worth of work ...</span>
+pool.put(key, conn)</code></pre>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Preset</th><th>What it decides</th></tr></thead>
+        <tbody>
+          <tr><td><code>idle</code></td><td>30000 ms</td><td>how long a connection may sit idle before it is closed instead of reused</td></tr>
+          <tr><td><code>max_idle</code></td><td>8</td><td>idle connections kept per key</td></tr>
+          <tr><td><code>max_total</code></td><td>64</td><td>connections held open at once, in use or idle</td></tr>
+          <tr><td><code>liveness</code></td><td><code>Peek</code></td><td>what a connection is asked before reuse: nothing, or a read that does not wait</td></tr>
+          <tr><td><code>wait</code></td><td>5000 ms</td><td>how long a caller waits for a slot when the pool is full</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><code>Peek</code> is a read with a one-millisecond bound. A peer that has closed while the connection sat idle is dropped; a peer that said something is kept along with what it said, so the next exchange starts from those octets rather than after them. A pool at <code>max_total</code> raises <code>Busy</code> instead of opening past it, and a caller that waits is woken when a connection comes back.</p>
+
+    <h2 id="udp">Datagrams and QUIC</h2>
+    <p>The datagram socket is a socket: bind it, send to an address, receive a datagram with its sender. QUIC sits on one, and <code>step</code> is one turn of the connection — put what is queued on the wire, take one datagram in.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>quic.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let quic = @udp.dial("example.com", port=443, tls=tls)
+let stream = quic.open_bi()
+quic.write(stream, b"hello", fin=true)
+
+while quic.step(timeout=200) {
+  let arrived = quic.take(stream)
+  if arrived.length() &gt; 0 {
+    println(arrived)
+    break
+  }
+  if quic.ended(stream) {
+    break
+  }
+}</code></pre>
+    </div>
+    <p>Reading is a poll rather than a blocking call because one QUIC connection carries control and QPACK streams beside the exchange's own; a blocking read would hold those back. The same socket is what HTTP/3 is built on.</p>
+
+    <h2 id="backends">Backends and errors</h2>
+    <p>The sockets are the async runtime's, and they exist on the native and wasm backends. On js and wasm-gc the packages that drive them are empty, so code that only uses the front door still compiles there and a program that opens sockets is native or wasm.</p>
+    <p>Everything a connection will not do is a <code>Refused</code>, so a caller can tell the cases apart without matching on strings:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variant</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>Malformed(String)</code></td><td>the peer's bytes do not parse: a head that never ends, a chunk size that is not a number, a body that stops short</td></tr>
+          <tr><td><code>Unsupported(String)</code></td><td>a scheme, a version or an exchange this connection will not carry</td></tr>
+          <tr><td><code>Closed</code></td><td>the connection is gone, or the exchange has already ended</td></tr>
+          <tr><td><code>Broken(String)</code></td><td>the socket failed under it</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p>One task reads a connection and one task writes it. The async runtime aborts the process when two tasks read or two tasks write the same handle at once, so a pool hands a connection to one caller at a time.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__row">
+    <span>moonnet · Apache-2.0</span>
+    <span>
+      <a href="index.html">Home</a> ·
+      <a href="api.html">API</a> ·
+      <a href="showcase.html">Showcase</a> ·
+      <a href="https://github.com/moonbitstack/moonnet">GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

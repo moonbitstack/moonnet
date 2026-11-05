@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API reference · moonnet</title>
+<meta name="description" content="Every public value, type, method and error in moonnet, generated from the package interfaces and their documentation comments.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230C1116'/><path d='M6 11h20M6 21h20' stroke='%2340C8B4' stroke-width='2'/><circle cx='11' cy='11' r='2.4' fill='%23F0B357'/><circle cx='21' cy='21' r='2.4' fill='%23F0B357'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="page-api">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="nav__brand" href="index.html" aria-label="moonnet home">
+    <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M2 6h28M2 18h28" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="23" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    <span>moonnet</span>
+  </a>
+  <button class="nav__icon nav__menu" type="button" aria-label="Menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <nav class="nav__links">
+    <a class="nav__link" href="index.html">Home</a>
+    <a class="nav__link" href="guide.html">Guide</a>
+    <a class="nav__link is-active" href="api.html" aria-current="page">API</a>
+    <a class="nav__link" href="showcase.html">Showcase</a>
+    <a class="nav__link nav__link--ext" href="https://mooncakes.io/docs/moonbitstack/moonnet">mooncakes</a>
+    <a class="nav__icon" href="https://github.com/moonbitstack/moonnet" aria-label="GitHub repository" title="GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.69.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+    </a>
+    <button class="nav__icon nav__toggle" type="button" aria-label="Toggle theme" aria-pressed="false" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="main" class="wrap docs">
+  <aside class="toc" aria-label="Contents">
+<a href="#pkg-spec" class="toc__pkg">moonnet/spec</a>
+<a href="#spec-v-call" class="toc-sub">call</a>
+<a href="#spec-v-find" class="toc-sub">find</a>
+<a href="#spec-v-lines" class="toc-sub">lines</a>
+<a href="#spec-v-read_to_end" class="toc-sub">read_to_end</a>
+<a href="#spec-v-table" class="toc-sub">table</a>
+<a href="#spec-t-Body" class="toc-sub">Body</a>
+<a href="#spec-t-Field" class="toc-sub">Field</a>
+<a href="#spec-m-Field-key" class="toc-sub toc-sub--deep">Field.key</a>
+<a href="#spec-m-Field-new" class="toc-sub toc-sub--deep">Field.new</a>
+<a href="#spec-t-Refused" class="toc-sub">Refused</a>
+<a href="#spec-t-Request" class="toc-sub">Request</a>
+<a href="#spec-m-Request-field" class="toc-sub toc-sub--deep">Request.field</a>
+<a href="#spec-m-Request-new" class="toc-sub toc-sub--deep">Request.new</a>
+<a href="#spec-t-Response" class="toc-sub">Response</a>
+<a href="#spec-m-Response-field" class="toc-sub toc-sub--deep">Response.field</a>
+<a href="#spec-t-Stream" class="toc-sub">Stream</a>
+<a href="#spec-t-Conn" class="toc-sub">Conn</a>
+<a href="#pkg-adapt-h1" class="toc__pkg">moonnet/adapt/h1</a>
+<a href="#adapt-h1-v-client" class="toc-sub">client</a>
+<a href="#adapt-h1-v-connect" class="toc-sub">connect</a>
+<a href="#adapt-h1-t-Conn" class="toc-sub">Conn</a>
+<a href="#adapt-h1-m-Conn-close" class="toc-sub toc-sub--deep">Conn.close</a>
+<a href="#adapt-h1-m-Conn-is_ready" class="toc-sub toc-sub--deep">Conn.is_ready</a>
+<a href="#adapt-h1-m-Conn-kind" class="toc-sub toc-sub--deep">Conn.kind</a>
+<a href="#adapt-h1-m-Conn-new" class="toc-sub toc-sub--deep">Conn.new</a>
+<a href="#adapt-h1-m-Conn-open" class="toc-sub toc-sub--deep">Conn.open</a>
+<a href="#adapt-h1-m-Conn-read" class="toc-sub toc-sub--deep">Conn.read</a>
+<a href="#adapt-h1-m-Conn-response" class="toc-sub toc-sub--deep">Conn.response</a>
+<a href="#adapt-h1-m-Conn-send" class="toc-sub toc-sub--deep">Conn.send</a>
+<a href="#adapt-h1-m-Conn-trailers" class="toc-sub toc-sub--deep">Conn.trailers</a>
+<a href="#adapt-h1-t-Phase" class="toc-sub">Phase</a>
+<a href="#pkg-adapt-h2" class="toc__pkg">moonnet/adapt/h2</a>
+<a href="#adapt-h2-v-client" class="toc-sub">client</a>
+<a href="#adapt-h2-v-connect" class="toc-sub">connect</a>
+<a href="#adapt-h2-t-Conn" class="toc-sub">Conn</a>
+<a href="#adapt-h2-m-Conn-close" class="toc-sub toc-sub--deep">Conn.close</a>
+<a href="#adapt-h2-m-Conn-is_ready" class="toc-sub toc-sub--deep">Conn.is_ready</a>
+<a href="#adapt-h2-m-Conn-kind" class="toc-sub toc-sub--deep">Conn.kind</a>
+<a href="#adapt-h2-m-Conn-open" class="toc-sub toc-sub--deep">Conn.open</a>
+<a href="#adapt-h2-m-Conn-read" class="toc-sub toc-sub--deep">Conn.read</a>
+<a href="#adapt-h2-m-Conn-response" class="toc-sub toc-sub--deep">Conn.response</a>
+<a href="#adapt-h2-m-Conn-send" class="toc-sub toc-sub--deep">Conn.send</a>
+<a href="#adapt-h2-m-Conn-trailers" class="toc-sub toc-sub--deep">Conn.trailers</a>
+<a href="#pkg-adapt-h3" class="toc__pkg">moonnet/adapt/h3</a>
+<a href="#adapt-h3-v-connect" class="toc-sub">connect</a>
+<a href="#adapt-h3-t-Conn" class="toc-sub">Conn</a>
+<a href="#adapt-h3-m-Conn-close" class="toc-sub toc-sub--deep">Conn.close</a>
+<a href="#adapt-h3-m-Conn-is_ready" class="toc-sub toc-sub--deep">Conn.is_ready</a>
+<a href="#adapt-h3-m-Conn-kind" class="toc-sub toc-sub--deep">Conn.kind</a>
+<a href="#adapt-h3-m-Conn-open" class="toc-sub toc-sub--deep">Conn.open</a>
+<a href="#adapt-h3-m-Conn-read" class="toc-sub toc-sub--deep">Conn.read</a>
+<a href="#adapt-h3-m-Conn-response" class="toc-sub toc-sub--deep">Conn.response</a>
+<a href="#adapt-h3-m-Conn-send" class="toc-sub toc-sub--deep">Conn.send</a>
+<a href="#adapt-h3-m-Conn-trailers" class="toc-sub toc-sub--deep">Conn.trailers</a>
+<a href="#pkg-adapt-ws" class="toc__pkg">moonnet/adapt/ws</a>
+<a href="#adapt-ws-v-client" class="toc-sub">client</a>
+<a href="#adapt-ws-v-connect" class="toc-sub">connect</a>
+<a href="#adapt-ws-t-Conn" class="toc-sub">Conn</a>
+<a href="#adapt-ws-m-Conn-close" class="toc-sub toc-sub--deep">Conn.close</a>
+<a href="#adapt-ws-m-Conn-close_code" class="toc-sub toc-sub--deep">Conn.close_code</a>
+<a href="#adapt-ws-m-Conn-close_reason" class="toc-sub toc-sub--deep">Conn.close_reason</a>
+<a href="#adapt-ws-m-Conn-is_closed" class="toc-sub toc-sub--deep">Conn.is_closed</a>
+<a href="#adapt-ws-m-Conn-is_ready" class="toc-sub toc-sub--deep">Conn.is_ready</a>
+<a href="#adapt-ws-m-Conn-kind" class="toc-sub toc-sub--deep">Conn.kind</a>
+<a href="#adapt-ws-m-Conn-next" class="toc-sub toc-sub--deep">Conn.next</a>
+<a href="#adapt-ws-m-Conn-open" class="toc-sub toc-sub--deep">Conn.open</a>
+<a href="#adapt-ws-m-Conn-read" class="toc-sub toc-sub--deep">Conn.read</a>
+<a href="#adapt-ws-m-Conn-response" class="toc-sub toc-sub--deep">Conn.response</a>
+<a href="#adapt-ws-m-Conn-send" class="toc-sub toc-sub--deep">Conn.send</a>
+<a href="#adapt-ws-m-Conn-send_binary" class="toc-sub toc-sub--deep">Conn.send_binary</a>
+<a href="#adapt-ws-m-Conn-send_text" class="toc-sub toc-sub--deep">Conn.send_text</a>
+<a href="#adapt-ws-m-Conn-trailers" class="toc-sub toc-sub--deep">Conn.trailers</a>
+<a href="#pkg-tcp" class="toc__pkg">moonnet/tcp</a>
+<a href="#tcp-v-dial" class="toc-sub">dial</a>
+<a href="#tcp-v-handshake" class="toc-sub">handshake</a>
+<a href="#tcp-v-host" class="toc-sub">host</a>
+<a href="#tcp-v-listen" class="toc-sub">listen</a>
+<a href="#tcp-v-port" class="toc-sub">port</a>
+<a href="#tcp-v-serve" class="toc-sub">serve</a>
+<a href="#tcp-t-Conn" class="toc-sub">Conn</a>
+<a href="#tcp-m-Conn-_direct_read" class="toc-sub toc-sub--deep">Conn._direct_read</a>
+<a href="#tcp-m-Conn-_get_internal_buffer" class="toc-sub toc-sub--deep">Conn._get_internal_buffer</a>
+<a href="#tcp-m-Conn-alpn" class="toc-sub toc-sub--deep">Conn.alpn</a>
+<a href="#tcp-m-Conn-client" class="toc-sub toc-sub--deep">Conn.client</a>
+<a href="#tcp-m-Conn-close" class="toc-sub toc-sub--deep">Conn.close</a>
+<a href="#tcp-m-Conn-drop" class="toc-sub toc-sub--deep">Conn.drop</a>
+<a href="#tcp-m-Conn-is_alive" class="toc-sub toc-sub--deep">Conn.is_alive</a>
+<a href="#tcp-m-Conn-is_tls" class="toc-sub toc-sub--deep">Conn.is_tls</a>
+<a href="#tcp-m-Conn-opens_tls" class="toc-sub toc-sub--deep">Conn.opens_tls</a>
+<a href="#tcp-m-Conn-peer" class="toc-sub toc-sub--deep">Conn.peer</a>
+<a href="#tcp-m-Conn-plain" class="toc-sub toc-sub--deep">Conn.plain</a>
+<a href="#tcp-m-Conn-read" class="toc-sub toc-sub--deep">Conn.read</a>
+<a href="#tcp-m-Conn-read_all" class="toc-sub toc-sub--deep">Conn.read_all</a>
+<a href="#tcp-m-Conn-read_exactly" class="toc-sub toc-sub--deep">Conn.read_exactly</a>
+<a href="#tcp-m-Conn-read_some" class="toc-sub toc-sub--deep">Conn.read_some</a>
+<a href="#tcp-m-Conn-read_until" class="toc-sub toc-sub--deep">Conn.read_until</a>
+<a href="#tcp-m-Conn-secure" class="toc-sub toc-sub--deep">Conn.secure</a>
+<a href="#tcp-m-Conn-server" class="toc-sub toc-sub--deep">Conn.server</a>
+<a href="#tcp-m-Conn-server_name" class="toc-sub toc-sub--deep">Conn.server_name</a>
+<a href="#tcp-m-Conn-shutdown" class="toc-sub toc-sub--deep">Conn.shutdown</a>
+<a href="#tcp-m-Conn-starts_with" class="toc-sub toc-sub--deep">Conn.starts_with</a>
+<a href="#tcp-m-Conn-tls" class="toc-sub toc-sub--deep">Conn.tls</a>
+<a href="#tcp-m-Conn-upgrade" class="toc-sub toc-sub--deep">Conn.upgrade</a>
+<a href="#tcp-m-Conn-write" class="toc-sub toc-sub--deep">Conn.write</a>
+<a href="#tcp-m-Conn-write_once" class="toc-sub toc-sub--deep">Conn.write_once</a>
+<a href="#tcp-m-Conn-write_reader" class="toc-sub toc-sub--deep">Conn.write_reader</a>
+<a href="#tcp-t-Listener" class="toc-sub">Listener</a>
+<a href="#tcp-m-Listener-accept" class="toc-sub toc-sub--deep">Listener.accept</a>
+<a href="#tcp-m-Listener-addr" class="toc-sub toc-sub--deep">Listener.addr</a>
+<a href="#tcp-m-Listener-close" class="toc-sub toc-sub--deep">Listener.close</a>
+<a href="#tcp-m-Listener-serve" class="toc-sub toc-sub--deep">Listener.serve</a>
+<a href="#tcp-t-Refused" class="toc-sub">Refused</a>
+<a href="#pkg-udp" class="toc__pkg">moonnet/udp</a>
+<a href="#udp-v-bind" class="toc-sub">bind</a>
+<a href="#udp-v-dial" class="toc-sub">dial</a>
+<a href="#udp-v-now" class="toc-sub">now</a>
+<a href="#udp-t-Quic" class="toc-sub">Quic</a>
+<a href="#udp-m-Quic-alpn" class="toc-sub toc-sub--deep">Quic.alpn</a>
+<a href="#udp-m-Quic-close" class="toc-sub toc-sub--deep">Quic.close</a>
+<a href="#udp-m-Quic-ended" class="toc-sub toc-sub--deep">Quic.ended</a>
+<a href="#udp-m-Quic-open_bi" class="toc-sub toc-sub--deep">Quic.open_bi</a>
+<a href="#udp-m-Quic-open_uni" class="toc-sub toc-sub--deep">Quic.open_uni</a>
+<a href="#udp-m-Quic-step" class="toc-sub toc-sub--deep">Quic.step</a>
+<a href="#udp-m-Quic-take" class="toc-sub toc-sub--deep">Quic.take</a>
+<a href="#udp-m-Quic-write" class="toc-sub toc-sub--deep">Quic.write</a>
+<a href="#udp-t-QuicRefused" class="toc-sub">QuicRefused</a>
+<a href="#udp-t-Socket" class="toc-sub">Socket</a>
+<a href="#udp-m-Socket-addr" class="toc-sub toc-sub--deep">Socket.addr</a>
+<a href="#udp-m-Socket-close" class="toc-sub toc-sub--deep">Socket.close</a>
+<a href="#udp-m-Socket-recv" class="toc-sub toc-sub--deep">Socket.recv</a>
+<a href="#udp-m-Socket-send" class="toc-sub toc-sub--deep">Socket.send</a>
+<a href="#pkg-pool" class="toc__pkg">moonnet/pool</a>
+<a href="#pool-v-defaults" class="toc-sub">defaults</a>
+<a href="#pool-t-Config" class="toc-sub">Config</a>
+<a href="#pool-t-Idle" class="toc-sub">Idle</a>
+<a href="#pool-t-Key" class="toc-sub">Key</a>
+<a href="#pool-m-Key-new" class="toc-sub toc-sub--deep">Key.new</a>
+<a href="#pool-t-Liveness" class="toc-sub">Liveness</a>
+<a href="#pool-t-Pool" class="toc-sub">Pool</a>
+<a href="#pool-m-Pool-close" class="toc-sub toc-sub--deep">Pool.close</a>
+<a href="#pool-m-Pool-get" class="toc-sub toc-sub--deep">Pool.get</a>
+<a href="#pool-m-Pool-idle" class="toc-sub toc-sub--deep">Pool.idle</a>
+<a href="#pool-m-Pool-new" class="toc-sub toc-sub--deep">Pool.new</a>
+<a href="#pool-m-Pool-put" class="toc-sub toc-sub--deep">Pool.put</a>
+<a href="#pool-m-Pool-total" class="toc-sub toc-sub--deep">Pool.total</a>
+<a href="#pool-t-Refused" class="toc-sub">Refused</a>
+<a href="#pkg-root" class="toc__pkg">moonnet</a>
+<a href="#root-v-bind" class="toc-sub">bind</a>
+<a href="#root-v-connect" class="toc-sub">connect</a>
+<a href="#root-v-dial" class="toc-sub">dial</a>
+<a href="#root-v-listen" class="toc-sub">listen</a>
+<a href="#root-v-serve" class="toc-sub">serve</a>
+<a href="#root-t-Opened" class="toc-sub">Opened</a>
+  </aside>
+  <div class="content">
+    <p class="eyebrow">API reference</p>
+    <h1 class="page-title">The whole surface, by package.</h1>
+    <p class="lead">Every public value, type, method and error, generated from the package interfaces and the comments beside the code.</p>
+<h2 class="api-pkg" id="pkg-spec">moonnet/spec</h2>
+<p class="api-blurb">The contract: one exchange, whatever carries it.</p>
+<div class="api-item" id="spec-v-call"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">call</span>(&amp;Conn, Request) <span class="kw">-&gt;</span> (Response, Bytes)</div></div>
+<div class="api-item" id="spec-v-find"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">find</span>(Array[Field], String) <span class="kw">-&gt;</span> String?</div><p class="api-desc">The first field named <code>name</code>, matched without regard to case.</p></div>
+<div class="api-item" id="spec-v-lines"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">lines</span>(Array[Field]) <span class="kw">-&gt;</span> String</div><p class="api-desc"><code>name: value</code> lines, the form a head is shown in by a person reading a log.</p></div>
+<div class="api-item" id="spec-v-read_to_end"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">read_to_end</span>(&amp;Conn, Stream, limit? : Int32) <span class="kw">-&gt;</span> Bytes</div></div>
+<div class="api-item" id="spec-v-table"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">table</span>(Array[Field]) <span class="kw">-&gt;</span> Map[String, String]</div><p class="api-desc">Every field of a head as one lower-cased name to its value, the last one winning, as a map lookup would.</p></div>
+<div class="api-item" id="spec-t-Body"><div class="api-sig"><span class="kw">pub(all) enum</span> Body</div><p class="api-desc">Where a message&#x27;s body comes from.</p><div class="api-sub"><div class="api-sig api-sig--member">Empty</div><div class="api-vdoc"><p class="api-desc">No body: the message ends where its head does.</p></div><div class="api-sig api-sig--member">Bytes(Bytes)</div><div class="api-vdoc"><p class="api-desc">A body that is at hand, sent in full before the reply is read.</p></div><div class="api-sig api-sig--member">Streaming</div><div class="api-vdoc"><p class="api-desc">A body the caller sends with <code>send</code> after the exchange is open, in pieces whose length is not known when the head goes out.</p></div></div></div>
+<div class="api-item" id="spec-t-Field"><div class="api-sig"><span class="kw">pub(all) struct</span> Field</div><p class="api-desc">One field of a message head: the name, and the value, as they go on the wire.</p><div class="api-sub"><div class="api-sig api-sig--member">name : String</div><div class="api-sig api-sig--member">value : String</div></div></div>
+<div class="api-item" id="spec-m-Field-key"><div class="api-sig"><span class="kw">pub fn</span> Field::<span class="fn">key</span>(Self) <span class="kw">-&gt;</span> String</div><p class="api-desc">The name in the form a comparison uses: HTTP field names are case-insensitive (RFC 9110 §5.1), and a lower-case copy is what every lookup compares.</p></div>
+<div class="api-item" id="spec-m-Field-new"><div class="api-sig"><span class="kw">pub fn</span> Field::<span class="fn">new</span>(String, String) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="spec-t-Refused"><div class="api-sig"><span class="kw">pub(all) suberror</span> Refused</div><p class="api-desc">What a connection will not do.</p><div class="api-sub"><div class="api-sig api-sig--member">Malformed(String)</div><div class="api-vdoc"><p class="api-desc">The peer&#x27;s octets are not what the protocol allows.</p></div><div class="api-sig api-sig--member">Unsupported(String)</div><div class="api-vdoc"><p class="api-desc">The request, or the peer, asks for something this connection does not do.</p></div><div class="api-sig api-sig--member">Closed</div><div class="api-vdoc"><p class="api-desc">The connection ended before the exchange did.</p></div><div class="api-sig api-sig--member">Broken(String)</div><div class="api-vdoc"><p class="api-desc">The socket failed under the connection.</p></div></div></div>
+<div class="api-item" id="spec-t-Request"><div class="api-sig"><span class="kw">pub(all) struct</span> Request</div><p class="api-desc">A request: what to ask for, and what to carry along.</p><div class="api-sub"><div class="api-sig api-sig--member">verb : String</div><div class="api-sig api-sig--member">target : String</div><div class="api-sig api-sig--member">fields : Array[Field]</div><div class="api-sig api-sig--member">body : Body</div></div></div>
+<div class="api-item" id="spec-m-Request-field"><div class="api-sig"><span class="kw">pub fn</span> Request::<span class="fn">field</span>(Self, String) <span class="kw">-&gt;</span> String?</div></div>
+<div class="api-item" id="spec-m-Request-new"><div class="api-sig"><span class="kw">pub fn</span> Request::<span class="fn">new</span>(String, String, fields? : Array[Field], body? : Body) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="spec-t-Response"><div class="api-sig"><span class="kw">pub(all) struct</span> Response</div><p class="api-desc">A reply head: the status and the fields. The body is read through the connection, because it may be larger than anything worth holding at once.</p><div class="api-sub"><div class="api-sig api-sig--member">status : Int32</div><div class="api-sig api-sig--member">fields : Array[Field]</div></div></div>
+<div class="api-item" id="spec-m-Response-field"><div class="api-sig"><span class="kw">pub fn</span> Response::<span class="fn">field</span>(Self, String) <span class="kw">-&gt;</span> String?</div></div>
+<div class="api-item" id="spec-t-Stream"><div class="api-sig"><span class="kw">pub(all) struct</span> Stream</div><p class="api-desc">One exchange on a connection, named by the connection rather than by the protocol underneath: on a connection that carries one exchange at a time it is 1, and on one that multiplexes it is whatever that connection gave out.</p><div class="api-sub"><div class="api-sig api-sig--member">id : Int32</div></div></div>
+<div class="api-item" id="spec-t-Conn"><div class="api-sig"><span class="kw">pub(open) trait</span> Conn</div><p class="api-desc">The one contract a connection presents, whatever carries it: HTTP/1.1, HTTP/2, HTTP/3 or WebSocket. Code written against this runs on any of them; an implementation is all a new protocol needs.</p>
+<p class="api-desc">An exchange is opened, the request body is sent through it, and the reply&#x27;s head and body are read from it. A connection that carries one exchange at a time says so through <code>is_ready</code>, which a caller waits on before opening the next.</p><div class="api-sub"><div class="api-sig api-sig--member">async fn open(Self, Request) <span class="kw">-&gt;</span> Stream</div><div class="api-vdoc"><p class="api-desc">Open an exchange on <code>request</code>, and send its head and whatever body came with it.</p></div><div class="api-sig api-sig--member">async fn send(Self, Stream, Bytes, end~ : Bool) <span class="kw">-&gt;</span> Unit</div><div class="api-vdoc"><p class="api-desc">Send more of the request&#x27;s body; <code>end</code> marks the last of it. Only an exchange opened with <code>Body::Streaming</code> takes this.</p></div><div class="api-sig api-sig--member">async fn response(Self, Stream) <span class="kw">-&gt;</span> Response</div><div class="api-vdoc"><p class="api-desc">The reply&#x27;s head, once the peer has sent it.</p></div><div class="api-sig api-sig--member">async fn read(Self, Stream) <span class="kw">-&gt;</span> Bytes?</div><div class="api-vdoc"><p class="api-desc">The next run of the reply&#x27;s body, read as it arrives; <code>None</code> ends it.</p></div><div class="api-sig api-sig--member">fn trailers(Self, Stream) <span class="kw">-&gt;</span> Array[Field]</div><div class="api-vdoc"><p class="api-desc">The fields that came after the body, once <code>read</code> has ended it.</p></div><div class="api-sig api-sig--member">fn is_ready(Self) <span class="kw">-&gt;</span> Bool</div><div class="api-vdoc"><p class="api-desc">Whether another exchange can start on this connection now. False while one is in flight on a connection that carries them one at a time, and after it has ended.</p></div><div class="api-sig api-sig--member">fn kind(Self) <span class="kw">-&gt;</span> String</div><div class="api-vdoc"><p class="api-desc">The protocol the connection settled on, as ALPN names it: <code>http/1.1</code>, <code>h2</code>, <code>h3</code>.</p></div><div class="api-sig api-sig--member">async fn close(Self) <span class="kw">-&gt;</span> Unit</div><div class="api-vdoc"><p class="api-desc">End the connection, in whatever way the protocol under it asks for.</p></div></div></div>
+<h2 class="api-pkg" id="pkg-adapt-h1">moonnet/adapt/h1</h2>
+<p class="api-blurb">HTTP/1.1, RFC 9112.</p>
+<div class="api-item" id="adapt-h1-v-client"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">client</span>(@tcp.Conn, String) <span class="kw">-&gt;</span> Conn</div><p class="api-desc">A client over a connection that is already open to <code>authority</code>, the <code>host[:port]</code> the Host field carries.</p></div>
+<div class="api-item" id="adapt-h1-v-connect"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">connect</span>(String, port~ : Int32, tls? : @tls.Client, now? : Int64) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="adapt-h1-t-Conn"><div class="api-sig"><span class="kw">pub(all) struct</span> Conn</div><p class="api-desc">An HTTP/1.1 client connection: one exchange at a time, its head and body framed as RFC 9112 says, over the tcp connection underneath.</p><div class="api-sub"><div class="api-sig api-sig--member">sock : @tcp.Conn</div><div class="api-sig api-sig--member">authority : String</div><div class="api-sig api-sig--member">mut held : Bytes</div><div class="api-sig api-sig--member">mut at : Int32</div><div class="api-sig api-sig--member">mut next_id : Int32</div><div class="api-sig api-sig--member">mut stream : Int32</div><div class="api-sig api-sig--member">mut verb : String</div><div class="api-sig api-sig--member">mut phase : Phase</div><div class="api-sig api-sig--member">mut framing : @http1.Body</div><div class="api-sig api-sig--member">mut left : Int32</div><div class="api-sig api-sig--member">mut streaming : Bool</div><div class="api-sig api-sig--member">mut sent_end : Bool</div><div class="api-sig api-sig--member">mut alive : Bool</div><div class="api-sig api-sig--member">mut after : Array[@spec.Field]</div></div></div>
+<div class="api-item" id="adapt-h1-m-Conn-close"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-is_ready"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_ready</span>(Self) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-kind"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">kind</span>(Self) <span class="kw">-&gt;</span> String</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-new"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">new</span>(@tcp.Conn, String) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-open"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">open</span>(Self, @spec.Request) <span class="kw">-&gt;</span> @spec.Stream</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Bytes?</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-response"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">response</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> @spec.Response</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-send"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send</span>(Self, @spec.Stream, Bytes, end~ : Bool) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h1-m-Conn-trailers"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">trailers</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Array[@spec.Field]</div></div>
+<div class="api-item" id="adapt-h1-t-Phase"><div class="api-sig"><span class="kw">pub(all) enum</span> Phase</div><p class="api-desc">Where an exchange stands.</p><div class="api-sub"><div class="api-sig api-sig--member">Idle</div><div class="api-sig api-sig--member">Reading</div><div class="api-sig api-sig--member">Body</div><div class="api-sig api-sig--member">Finished</div></div></div>
+<div class="api-sig api-sig--impl">pub impl @spec.Conn for Conn</div>
+<h2 class="api-pkg" id="pkg-adapt-h2">moonnet/adapt/h2</h2>
+<p class="api-blurb">HTTP/2, RFC 9113.</p>
+<div class="api-item" id="adapt-h2-v-client"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">client</span>(@tcp.Conn, scheme? : String, authority~ : String) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="adapt-h2-v-connect"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">connect</span>(String, port~ : Int32, tls? : @tls.Client, now? : Int64, authority? : String) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="adapt-h2-t-Conn"><div class="api-sig"><span class="kw">pub(all) struct</span> Conn</div><p class="api-desc">An HTTP/2 client connection: many exchanges over one connection, each on its own stream, framed as RFC 9113 says.</p><div class="api-sub"><div class="api-sig api-sig--member">sock : @tcp.Conn</div><div class="api-sig api-sig--member">h2 : @http2.Conn</div><div class="api-sig api-sig--member">authority : String</div><div class="api-sig api-sig--member">scheme : String</div><div class="api-sig api-sig--member">events : Array[@http2.Event]</div><div class="api-sig api-sig--member">tails : Map[Int32, Array[@spec.Field]]</div><div class="api-sig api-sig--member">mut dead : Bool</div></div></div>
+<div class="api-item" id="adapt-h2-m-Conn-close"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-is_ready"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_ready</span>(Self) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-kind"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">kind</span>(Self) <span class="kw">-&gt;</span> String</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-open"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">open</span>(Self, @spec.Request) <span class="kw">-&gt;</span> @spec.Stream</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Bytes?</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-response"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">response</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> @spec.Response</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-send"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send</span>(Self, @spec.Stream, Bytes, end~ : Bool) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h2-m-Conn-trailers"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">trailers</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Array[@spec.Field]</div></div>
+<div class="api-sig api-sig--impl">pub impl @spec.Conn for Conn</div>
+<h2 class="api-pkg" id="pkg-adapt-h3">moonnet/adapt/h3</h2>
+<p class="api-blurb">HTTP/3, RFC 9114, over QUIC.</p>
+<div class="api-item" id="adapt-h3-v-connect"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">connect</span>(String, port~ : Int32, tls~ : @tls.Client, authority? : String) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="adapt-h3-t-Conn"><div class="api-sig"><span class="kw">pub(all) struct</span> Conn</div><p class="api-desc">An HTTP/3 client connection: one QUIC connection, a control stream carrying this side&#x27;s settings, and a bidirectional stream for every exchange (RFC 9114 §6).</p><div class="api-sub"><div class="api-sig api-sig--member">quic : @udp.Quic</div><div class="api-sig api-sig--member">scheme : String</div><div class="api-sig api-sig--member">authority : String</div><div class="api-sig api-sig--member">mut next_id : Int32</div><div class="api-sig api-sig--member">streams : Map[Int32, UInt64]</div><div class="api-sig api-sig--member">held : Map[Int32, Bytes]</div><div class="api-sig api-sig--member">body : Map[Int32, Bytes]</div><div class="api-sig api-sig--member">heads : Map[Int32, @spec.Response]</div><div class="api-sig api-sig--member">tails : Map[Int32, Array[@spec.Field]]</div><div class="api-sig api-sig--member">ended : Map[Int32, Bool]</div><div class="api-sig api-sig--member">mut dead : Bool</div><div class="api-sig api-sig--member">mut quiet : Int64</div><div class="api-sig api-sig--member">deadline : Int64</div></div></div>
+<div class="api-item" id="adapt-h3-m-Conn-close"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-is_ready"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_ready</span>(Self) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-kind"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">kind</span>(Self) <span class="kw">-&gt;</span> String</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-open"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">open</span>(Self, @spec.Request) <span class="kw">-&gt;</span> @spec.Stream</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Bytes?</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-response"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">response</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> @spec.Response</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-send"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send</span>(Self, @spec.Stream, Bytes, end~ : Bool) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-h3-m-Conn-trailers"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">trailers</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Array[@spec.Field]</div></div>
+<div class="api-sig api-sig--impl">pub impl @spec.Conn for Conn</div>
+<h2 class="api-pkg" id="pkg-adapt-ws">moonnet/adapt/ws</h2>
+<p class="api-blurb">WebSocket, RFC 6455.</p>
+<div class="api-item" id="adapt-ws-v-client"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">client</span>(@tcp.Conn, host~ : String, scheme? : String) <span class="kw">-&gt;</span> Conn</div><p class="api-desc">A session over a connection that is already open to the server.</p></div>
+<div class="api-item" id="adapt-ws-v-connect"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">connect</span>(StringView, tls? : @tls.Client, now? : Int64) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="adapt-ws-t-Conn"><div class="api-sig"><span class="kw">pub(all) struct</span> Conn</div><p class="api-desc">A WebSocket session over a connection. The exchange is the upgrade: <code>open</code> sends the handshake, <code>response</code> is the 101, and from then on <code>read</code> yields whole messages and <code>send</code> writes them.</p><div class="api-sub"><div class="api-sig api-sig--member">sock : @tcp.Conn</div><div class="api-sig api-sig--member">scheme : String</div><div class="api-sig api-sig--member">host : String</div><div class="api-sig api-sig--member">mut target : String</div><div class="api-sig api-sig--member">key : String</div><div class="api-sig api-sig--member">stream : Int32</div><div class="api-sig api-sig--member">mut held : Bytes</div><div class="api-sig api-sig--member">reader : @moonbitstack/moonhttp/ws.Reader</div><div class="api-sig api-sig--member">mut opened : Bool</div><div class="api-sig api-sig--member">mut closed : Bool</div><div class="api-sig api-sig--member">mut code : Int32</div><div class="api-sig api-sig--member">mut why : String</div><div class="api-sig api-sig--member">mut head : @spec.Response?</div></div></div>
+<div class="api-item" id="adapt-ws-m-Conn-close"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-close_code"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">close_code</span>(Self) <span class="kw">-&gt;</span> Int32</div><p class="api-desc">The close code and reason the peer gave, once the session has closed; 0 before.</p></div>
+<div class="api-item" id="adapt-ws-m-Conn-close_reason"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">close_reason</span>(Self) <span class="kw">-&gt;</span> String</div><p class="api-desc">The reason the peer gave with its close, empty when it gave none.</p></div>
+<div class="api-item" id="adapt-ws-m-Conn-is_closed"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_closed</span>(Self) <span class="kw">-&gt;</span> Bool</div><p class="api-desc">Whether the session has closed, from either side.</p></div>
+<div class="api-item" id="adapt-ws-m-Conn-is_ready"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_ready</span>(Self) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-kind"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">kind</span>(Self) <span class="kw">-&gt;</span> String</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-next"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">next</span>(Self) <span class="kw">-&gt;</span> @moonbitstack/moonhttp/ws.Message? raise @spec.Refused</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-open"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">open</span>(Self, @spec.Request) <span class="kw">-&gt;</span> @spec.Stream</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Bytes?</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-response"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">response</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> @spec.Response</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-send"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send</span>(Self, @spec.Stream, Bytes, end~ : Bool) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-send_binary"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send_binary</span>(Self, Bytes) <span class="kw">-&gt;</span> Unit raise @spec.Refused</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-send_text"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">send_text</span>(Self, String) <span class="kw">-&gt;</span> Unit raise @spec.Refused</div></div>
+<div class="api-item" id="adapt-ws-m-Conn-trailers"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">trailers</span>(Self, @spec.Stream) <span class="kw">-&gt;</span> Array[@spec.Field]</div></div>
+<div class="api-sig api-sig--impl">pub impl @spec.Conn for Conn</div>
+<h2 class="api-pkg" id="pkg-tcp">moonnet/tcp</h2>
+<p class="api-blurb">TCP, and TLS over it: connections, the listener, the dialler.</p>
+<div class="api-item" id="tcp-v-dial"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">dial</span>(String, port~ : Int32, tls? : @tls.Client, now? : Int64) <span class="kw">-&gt;</span> Conn</div></div>
+<div class="api-item" id="tcp-v-handshake"><div class="api-sig"><span class="kw">pub let</span> <span class="fn">handshake</span> : Int32</div><p class="api-desc">How long a TLS handshake may take, in milliseconds: asyncio&#x27;s and hypercorn&#x27;s 60 seconds. A peer that connects and never finishes holds a connection slot until then.</p></div>
+<div class="api-item" id="tcp-v-host"><div class="api-sig"><span class="kw">pub let</span> <span class="fn">host</span> : String</div><p class="api-desc">The address a server listens on when none is given: loopback only, as uvicorn and Starlette default to, so a development server is not reachable from the network by accident.</p></div>
+<div class="api-item" id="tcp-v-listen"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">listen</span>(host? : String, port? : Int32, tls? : @tls.Server, reuse_addr? : Bool, handshake? : Int32?, cleartext? : Bool) <span class="kw">-&gt;</span> Listener</div></div>
+<div class="api-item" id="tcp-v-port"><div class="api-sig"><span class="kw">pub let</span> <span class="fn">port</span> : Int32</div><p class="api-desc">The port every server in the family listens on by default.</p></div>
+<div class="api-item" id="tcp-v-serve"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">serve</span>(async (Conn, @socket.Addr) <span class="kw">-&gt;</span> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool, handshake? : Int32?) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="tcp-t-Conn"><div class="api-sig"><span class="kw">type</span> Conn</div><p class="api-desc">One TCP connection, in the clear or under TLS 1.3. It reads and writes through <code>@io.Reader</code> and <code>@io.Writer</code> either way, so a protocol driver serves both with the same code.</p>
+<p class="api-desc">One task may read while another writes. Writes are serialised, so two tasks writing at once put whole messages on the wire, one after the other, and TLS records stay in sequence.</p></div>
+<div class="api-item" id="tcp-m-Conn-_direct_read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">_direct_read</span>(Self, FixedArray[Byte], offset~ : Int32, max_len~ : Int32) <span class="kw">-&gt;</span> Int32</div></div>
+<div class="api-item" id="tcp-m-Conn-_get_internal_buffer"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">_get_internal_buffer</span>(Self) <span class="kw">-&gt;</span> @io.ReaderBuffer</div></div>
+<div class="api-item" id="tcp-m-Conn-alpn"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">alpn</span>(Self) <span class="kw">-&gt;</span> String?</div><p class="api-desc">The application protocol ALPN settled on (RFC 7301). None in the clear.</p></div>
+<div class="api-item" id="tcp-m-Conn-client"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">client</span>(@socket.Tcp, @tls.Client, String, rand? : (Int32) <span class="kw">-&gt;</span> Bytes, now? : Int64) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="tcp-m-Conn-close"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Close the socket. Call <code>shutdown</code> first for a clean end under TLS.</p></div>
+<div class="api-item" id="tcp-m-Conn-drop"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">drop</span>(Self, Int32) <span class="kw">-&gt;</span> Int32</div></div>
+<div class="api-item" id="tcp-m-Conn-is_alive"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">is_alive</span>(Self, wait? : Int32) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="tcp-m-Conn-is_tls"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">is_tls</span>(Self) <span class="kw">-&gt;</span> Bool</div><p class="api-desc">Whether the connection runs under TLS.</p></div>
+<div class="api-item" id="tcp-m-Conn-opens_tls"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">opens_tls</span>(Self) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="tcp-m-Conn-peer"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">peer</span>(Self) <span class="kw">-&gt;</span> Array[Bytes]</div><p class="api-desc">The certificate chain the peer presented, DER, leaf first. Empty in the clear.</p></div>
+<div class="api-item" id="tcp-m-Conn-plain"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">plain</span>(@socket.Tcp) <span class="kw">-&gt;</span> Self</div><p class="api-desc">A connection in the clear.</p></div>
+<div class="api-item" id="tcp-m-Conn-read"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read</span>(Self, FixedArray[Byte], offset? : Int32, max_len? : Int32) <span class="kw">-&gt;</span> Int32</div></div>
+<div class="api-item" id="tcp-m-Conn-read_all"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read_all</span>(Self) <span class="kw">-&gt;</span> &amp;@io.Data</div></div>
+<div class="api-item" id="tcp-m-Conn-read_exactly"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read_exactly</span>(Self, Int32) <span class="kw">-&gt;</span> Bytes</div></div>
+<div class="api-item" id="tcp-m-Conn-read_some"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read_some</span>(Self, max_len? : Int32) <span class="kw">-&gt;</span> Bytes?</div></div>
+<div class="api-item" id="tcp-m-Conn-read_until"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">read_until</span>(Self, StringView) <span class="kw">-&gt;</span> String?</div></div>
+<div class="api-item" id="tcp-m-Conn-secure"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">secure</span>(Self, @tls.Server, rand? : (Int32) <span class="kw">-&gt;</span> Bytes, now? : Int64) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="tcp-m-Conn-server"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">server</span>(@socket.Tcp, @tls.Server, rand? : (Int32) <span class="kw">-&gt;</span> Bytes, now? : Int64) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="tcp-m-Conn-server_name"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">server_name</span>(Self) <span class="kw">-&gt;</span> String?</div><p class="api-desc">The host name the client asked for (RFC 6066 §3). None in the clear.</p></div>
+<div class="api-item" id="tcp-m-Conn-shutdown"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">shutdown</span>(Self) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="tcp-m-Conn-starts_with"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">starts_with</span>(Self, BytesView) <span class="kw">-&gt;</span> Bool</div></div>
+<div class="api-item" id="tcp-m-Conn-tls"><div class="api-sig"><span class="kw">pub fn</span> Conn::<span class="fn">tls</span>(Self) <span class="kw">-&gt;</span> @tls.Conn?</div><p class="api-desc">The TLS connection underneath, for what the accessors here do not say: the suite, the key update, the refusal reason. None in the clear.</p></div>
+<div class="api-item" id="tcp-m-Conn-upgrade"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">upgrade</span>(Self, @tls.Client, String, rand? : (Int32) <span class="kw">-&gt;</span> Bytes, now? : Int64) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="tcp-m-Conn-write"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">write</span>(Self, &amp;@io.Data) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="tcp-m-Conn-write_once"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">write_once</span>(Self, Bytes, offset~ : Int32, len~ : Int32) <span class="kw">-&gt;</span> Int32</div></div>
+<div class="api-item" id="tcp-m-Conn-write_reader"><div class="api-sig"><span class="kw">pub async fn</span> Conn::<span class="fn">write_reader</span>(Self, &amp;@io.Reader) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="tcp-t-Listener"><div class="api-sig"><span class="kw">type</span> Listener</div><p class="api-desc">A bound, listening socket. Connections queue from the moment <code>listen</code> returns, so a caller can connect to it, or hand its port out, without racing the server.</p></div>
+<div class="api-item" id="tcp-m-Listener-accept"><div class="api-sig"><span class="kw">pub async fn</span> Listener::<span class="fn">accept</span>(Self) <span class="kw">-&gt;</span> (Conn, @socket.Addr)</div></div>
+<div class="api-item" id="tcp-m-Listener-addr"><div class="api-sig"><span class="kw">pub fn</span> Listener::<span class="fn">addr</span>(Self) <span class="kw">-&gt;</span> @socket.Addr</div><p class="api-desc">The address listened on; with port 0 asked for, the port the system chose.</p></div>
+<div class="api-item" id="tcp-m-Listener-close"><div class="api-sig"><span class="kw">pub fn</span> Listener::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Stop listening.</p></div>
+<div class="api-item" id="tcp-m-Listener-serve"><div class="api-sig"><span class="kw">pub async fn</span> Listener::<span class="fn">serve</span>(Self, async (Conn, @socket.Addr) <span class="kw">-&gt;</span> Unit, limit? : Int32) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="tcp-t-Refused"><div class="api-sig"><span class="kw">pub(all) suberror</span> Refused</div><p class="api-desc">What a connection will not do.</p><div class="api-sub"><div class="api-sig api-sig--member">Secured</div><div class="api-vdoc"><p class="api-desc"><code>secure</code> or <code>upgrade</code> on a connection that is TLS already.</p></div></div></div>
+<div class="api-sig api-sig--impl">pub impl @io.Reader for Conn</div>
+<div class="api-sig api-sig--impl">pub impl @io.Writer for Conn</div>
+<h2 class="api-pkg" id="pkg-udp">moonnet/udp</h2>
+<p class="api-blurb">The datagram socket, and the client end of a QUIC connection.</p>
+<div class="api-item" id="udp-v-bind"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">bind</span>(host? : String, port? : Int32) <span class="kw">-&gt;</span> Socket</div></div>
+<div class="api-item" id="udp-v-dial"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">dial</span>(String, port~ : Int32, tls~ : @tls.Client, idle? : UInt64) <span class="kw">-&gt;</span> Quic</div></div>
+<div class="api-item" id="udp-v-now"><div class="api-sig"><span class="kw">pub fn</span> <span class="fn">now</span>() <span class="kw">-&gt;</span> Int64</div><p class="api-desc">The clock QUIC counts in, milliseconds since the epoch.</p></div>
+<div class="api-item" id="udp-t-Quic"><div class="api-sig"><span class="kw">pub(all) struct</span> Quic</div><p class="api-desc">A QUIC connection driven by one task: the client half of what <code>moonquic</code> states and this package puts on a datagram socket. Reading is a poll, because a connection that also carries control and QPACK streams cannot hand every arrival to one caller.</p><div class="api-sub"><div class="api-sig api-sig--member">socket : Socket</div><div class="api-sig api-sig--member">to : @socket.Addr</div><div class="api-sig api-sig--member">client : @conn.Client</div><div class="api-sig api-sig--member">mut bi : UInt64</div><div class="api-sig api-sig--member">mut uni : UInt64</div><div class="api-sig api-sig--member">mut dead : Bool</div><div class="api-sig api-sig--member">seen : Map[UInt64, Bool]</div></div></div>
+<div class="api-item" id="udp-m-Quic-alpn"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">alpn</span>(Self) <span class="kw">-&gt;</span> String?</div><p class="api-desc">The ALPN the handshake settled on.</p></div>
+<div class="api-item" id="udp-m-Quic-close"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Close the socket the connection runs on.</p></div>
+<div class="api-item" id="udp-m-Quic-ended"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">ended</span>(Self, UInt64) <span class="kw">-&gt;</span> Bool</div><p class="api-desc">Whether the peer has ended <code>stream</code>, with every octet of it read.</p></div>
+<div class="api-item" id="udp-m-Quic-open_bi"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">open_bi</span>(Self) <span class="kw">-&gt;</span> UInt64</div><p class="api-desc">The next bidirectional stream this side opens: 0, 4, 8, … as RFC 9000 §2.1 numbers them.</p></div>
+<div class="api-item" id="udp-m-Quic-open_uni"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">open_uni</span>(Self) <span class="kw">-&gt;</span> UInt64</div><p class="api-desc">The next unidirectional stream, from 2 upwards.</p></div>
+<div class="api-item" id="udp-m-Quic-step"><div class="api-sig"><span class="kw">pub async fn</span> Quic::<span class="fn">step</span>(Self, timeout? : Int32) <span class="kw">-&gt;</span> Bool raise QuicRefused</div></div>
+<div class="api-item" id="udp-m-Quic-take"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">take</span>(Self, UInt64) <span class="kw">-&gt;</span> Bytes</div><p class="api-desc">The octets that arrived on <code>stream</code> since the last call; empty when none have.</p></div>
+<div class="api-item" id="udp-m-Quic-write"><div class="api-sig"><span class="kw">pub fn</span> Quic::<span class="fn">write</span>(Self, UInt64, Bytes, fin? : Bool) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Put <code>bytes</code> on <code>stream</code>, and end it when <code>fin</code>.</p></div>
+<div class="api-item" id="udp-t-QuicRefused"><div class="api-sig"><span class="kw">pub(all) suberror</span> QuicRefused</div><p class="api-desc">What a QUIC connection will not do.</p><div class="api-sub"><div class="api-sig api-sig--member">Timeout</div><div class="api-vdoc"><p class="api-desc">The handshake did not complete in the time this waited.</p></div><div class="api-sig api-sig--member">Broken(String)</div><div class="api-vdoc"><p class="api-desc">The socket or the connection under it failed.</p></div><div class="api-sig api-sig--member">Closed</div><div class="api-vdoc"><p class="api-desc">The connection is over.</p></div></div></div>
+<div class="api-item" id="udp-t-Socket"><div class="api-sig"><span class="kw">pub(all) struct</span> Socket</div><p class="api-desc">A datagram socket. One task may receive while others send; two tasks receiving at once would each take half the datagrams, so a connection that needs one reader keeps one.</p><div class="api-sub"><div class="api-sig api-sig--member">sock : @socket.UdpServer</div></div></div>
+<div class="api-item" id="udp-m-Socket-addr"><div class="api-sig"><span class="kw">pub fn</span> Socket::<span class="fn">addr</span>(Self) <span class="kw">-&gt;</span> @socket.Addr</div><p class="api-desc">The address bound; with port 0 asked for, the port the system chose.</p></div>
+<div class="api-item" id="udp-m-Socket-close"><div class="api-sig"><span class="kw">pub fn</span> Socket::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Stop using the socket.</p></div>
+<div class="api-item" id="udp-m-Socket-recv"><div class="api-sig"><span class="kw">pub async fn</span> Socket::<span class="fn">recv</span>(Self, max? : Int32, timeout? : Int32) <span class="kw">-&gt;</span> (Bytes, @socket.Addr)?</div></div>
+<div class="api-item" id="udp-m-Socket-send"><div class="api-sig"><span class="kw">pub async fn</span> Socket::<span class="fn">send</span>(Self, @socket.Addr, Bytes) <span class="kw">-&gt;</span> Unit</div></div>
+<h2 class="api-pkg" id="pkg-pool">moonnet/pool</h2>
+<p class="api-blurb">Connections kept by host, port and ALPN.</p>
+<div class="api-item" id="pool-v-defaults"><div class="api-sig"><span class="kw">pub let</span> <span class="fn">defaults</span> : Config</div><p class="api-desc">The presets: an idle connection lives half a minute, a key keeps eight, the pool holds sixty-four, a reused one is peeked at, and a caller waits five seconds for a slot. These are the values curl and Go&#x27;s transport settle near; what matters more is that all five are named and can be changed.</p></div>
+<div class="api-item" id="pool-t-Config"><div class="api-sig"><span class="kw">pub(all) struct</span> Config</div><p class="api-desc">How a pool behaves. Every one of these is a number a caller will want to change, so all of them are here rather than in the code.</p><div class="api-sub"><div class="api-sig api-sig--member">idle : Int32</div><div class="api-sig api-sig--member">max_idle : Int32</div><div class="api-sig api-sig--member">max_total : Int32</div><div class="api-sig api-sig--member">liveness : Liveness</div><div class="api-sig api-sig--member">wait : Int32</div></div></div>
+<div class="api-item" id="pool-t-Idle"><div class="api-sig"><span class="kw">pub(all) struct</span> Idle</div><p class="api-desc">A connection in the pool and the moment it stops being worth reusing.</p><div class="api-sub"><div class="api-sig api-sig--member">conn : @tcp.Conn</div><div class="api-sig api-sig--member">until : Int64</div></div></div>
+<div class="api-item" id="pool-t-Key"><div class="api-sig"><span class="kw">pub(all) struct</span> Key</div><p class="api-desc">What makes two connections interchangeable: the host, the port, and the protocol ALPN settled on. A connection kept under one key is never handed out for another.</p><div class="api-sub"><div class="api-sig api-sig--member">host : String</div><div class="api-sig api-sig--member">port : Int32</div><div class="api-sig api-sig--member">alpn : String</div></div></div>
+<div class="api-item" id="pool-m-Key-new"><div class="api-sig"><span class="kw">pub fn</span> Key::<span class="fn">new</span>(String, Int32, alpn~ : String) <span class="kw">-&gt;</span> Self</div></div>
+<div class="api-item" id="pool-t-Liveness"><div class="api-sig"><span class="kw">pub(all) enum</span> Liveness</div><p class="api-desc">What a reused connection is asked before it is handed out again.</p><div class="api-sub"><div class="api-sig api-sig--member">None_</div><div class="api-vdoc"><p class="api-desc">Nothing: a connection that served an exchange is taken on trust until the next one fails, which is what most clients do.</p></div><div class="api-sig api-sig--member">Peek</div><div class="api-vdoc"><p class="api-desc">A read that does not wait. A peer that has closed is dropped; one that has said something while idle keeps what it said for the next exchange.</p></div></div></div>
+<div class="api-item" id="pool-t-Pool"><div class="api-sig"><span class="kw">pub(all) struct</span> Pool</div><p class="api-desc">The connections kept for another exchange. A caller takes one with <code>get</code> and gives it back with <code>put</code>, or closes it and takes another next time; a connection that is not given back is not counted as idle and stays against <code>max_total</code>.</p><div class="api-sub"><div class="api-sig api-sig--member">dial : async (Key) <span class="kw">-&gt;</span> @tcp.Conn</div><div class="api-sig api-sig--member">config : Config</div><div class="api-sig api-sig--member">mut idle : Map[String, Array[Idle]]</div><div class="api-sig api-sig--member">mut total : Int32</div><div class="api-sig api-sig--member">changed : @cond_var.Cond</div><div class="api-sig api-sig--member">mut closed : Bool</div></div></div>
+<div class="api-item" id="pool-m-Pool-close"><div class="api-sig"><span class="kw">pub fn</span> Pool::<span class="fn">close</span>(Self) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Close every idle connection and refuse further use.</p></div>
+<div class="api-item" id="pool-m-Pool-get"><div class="api-sig"><span class="kw">pub async fn</span> Pool::<span class="fn">get</span>(Self, Key) <span class="kw">-&gt;</span> @tcp.Conn raise Refused</div></div>
+<div class="api-item" id="pool-m-Pool-idle"><div class="api-sig"><span class="kw">pub fn</span> Pool::<span class="fn">idle</span>(Self, Key) <span class="kw">-&gt;</span> Int32</div><p class="api-desc">How many connections are idle under <code>key</code>.</p></div>
+<div class="api-item" id="pool-m-Pool-new"><div class="api-sig"><span class="kw">pub fn</span> Pool::<span class="fn">new</span>(async (Key) <span class="kw">-&gt;</span> @tcp.Conn, config? : Config) <span class="kw">-&gt;</span> Self</div><p class="api-desc">A pool that opens a connection with <code>dial</code> when it has none to hand out.</p></div>
+<div class="api-item" id="pool-m-Pool-put"><div class="api-sig"><span class="kw">pub fn</span> Pool::<span class="fn">put</span>(Self, Key, @tcp.Conn) <span class="kw">-&gt;</span> Unit</div><p class="api-desc">Put a connection back for the next exchange. A pool that is closed, or that already keeps <code>max_idle</code> for this key, closes it instead; either way it stops counting against <code>max_total</code>.</p></div>
+<div class="api-item" id="pool-m-Pool-total"><div class="api-sig"><span class="kw">pub fn</span> Pool::<span class="fn">total</span>(Self) <span class="kw">-&gt;</span> Int32</div><p class="api-desc">How many connections the pool holds open, in use or idle.</p></div>
+<div class="api-item" id="pool-t-Refused"><div class="api-sig"><span class="kw">pub(all) suberror</span> Refused</div><p class="api-desc">What a pool will not do.</p><div class="api-sub"><div class="api-sig api-sig--member">Busy</div><div class="api-vdoc"><p class="api-desc">The pool is full and no slot came free in time.</p></div><div class="api-sig api-sig--member">Closed</div><div class="api-vdoc"><p class="api-desc">The pool was closed.</p></div><div class="api-sig api-sig--member">Failed(String)</div><div class="api-vdoc"><p class="api-desc">Opening a connection failed.</p></div></div></div>
+<h2 class="api-pkg" id="pkg-root">moonnet</h2>
+<p class="api-blurb">The front door: one import for the connection, the datagram socket and the contract.</p>
+<div class="api-item" id="root-v-bind"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">bind</span>(host? : String, port? : Int32) <span class="kw">-&gt;</span> @udp.Socket</div></div>
+<div class="api-item" id="root-v-connect"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">connect</span>(StringView, alpn? : Array[String], roots? : @x509.Roots, now? : Int64) <span class="kw">-&gt;</span> Opened</div></div>
+<div class="api-item" id="root-v-dial"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">dial</span>(String, port~ : Int32, tls? : @tls.Client, now? : Int64) <span class="kw">-&gt;</span> @tcp.Conn</div></div>
+<div class="api-item" id="root-v-listen"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">listen</span>(host? : String, port? : Int32, tls? : @tls.Server, reuse_addr? : Bool, handshake? : Int32?, cleartext? : Bool) <span class="kw">-&gt;</span> @tcp.Listener</div></div>
+<div class="api-item" id="root-v-serve"><div class="api-sig"><span class="kw">pub async fn</span> <span class="fn">serve</span>(async (@tcp.Conn, @socket.Addr) <span class="kw">-&gt;</span> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool, handshake? : Int32?) <span class="kw">-&gt;</span> Unit</div></div>
+<div class="api-item" id="root-t-Opened"><div class="api-sig"><span class="kw">pub(all) struct</span> Opened</div><p class="api-desc">What <code>connect</code> settled on.</p><div class="api-sub"><div class="api-sig api-sig--member">conn : @tcp.Conn</div><div class="api-sig api-sig--member">alpn : String</div><div class="api-sig api-sig--member">target : String</div></div></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__row">
+    <span>moonnet · Apache-2.0</span>
+    <span>
+      <a href="guide.html">Guide</a> ·
+      <a href="showcase.html">Showcase</a> ·
+      <a href="https://github.com/moonbitstack/moonnet">GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>

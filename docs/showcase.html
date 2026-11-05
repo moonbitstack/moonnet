@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showcase · moonnet</title>
+<meta name="description" content="The same request carried by HTTP/1.1, HTTP/2, HTTP/3 and WebSocket, with what each one puts on the wire and what the client printed.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230C1116'/><path d='M6 11h20M6 21h20' stroke='%2340C8B4' stroke-width='2'/><circle cx='11' cy='11' r='2.4' fill='%23F0B357'/><circle cx='21' cy='21' r='2.4' fill='%23F0B357'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+  .trace { list-style: none; margin: 16px 0 0; padding: 0; counter-reset: t; }
+  .trace li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-2);
+    font-size: 13.6px;
+    color: var(--muted);
+    opacity: 0.42;
+    transition: opacity 0.18s ease;
+  }
+  .trace li::before {
+    counter-increment: t;
+    content: counter(t);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 2px;
+  }
+  .trace li.is-on {
+    opacity: 1;
+    color: var(--ink-2);
+  }
+  .trace b {
+    font-family: var(--mono);
+    font-size: 12.6px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .stepper { display: flex; gap: 8px; margin-top: 14px; }
+  .stepper button {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    padding: 6px 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .stepper button:hover { border-color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .trace li { transition: none; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="nav__brand" href="index.html" aria-label="moonnet home">
+    <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M2 6h28M2 18h28" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="23" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    <span>moonnet</span>
+  </a>
+  <button class="nav__icon nav__menu" type="button" aria-label="Menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <nav class="nav__links">
+    <a class="nav__link" href="index.html">Home</a>
+    <a class="nav__link" href="guide.html">Guide</a>
+    <a class="nav__link" href="api.html">API</a>
+    <a class="nav__link is-active" href="showcase.html" aria-current="page">Showcase</a>
+    <a class="nav__link nav__link--ext" href="https://mooncakes.io/docs/moonbitstack/moonnet">mooncakes</a>
+    <a class="nav__icon" href="https://github.com/moonbitstack/moonnet" aria-label="GitHub repository" title="GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.69.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+    </a>
+    <button class="nav__icon nav__toggle" type="button" aria-label="Toggle theme" aria-pressed="false" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="main" class="wrap docs">
+  <aside class="toc" aria-label="Contents">
+    <a href="#same">The same call</a>
+    <a href="#wire">On the wire</a>
+    <a href="#what-differs">What differs</a>
+  </aside>
+
+  <div class="content">
+    <p class="eyebrow">Showcase</p>
+    <h1 class="page-title">One call, four carriers.</h1>
+    <p class="lead">Four clients, one request, one shape of answer. Everything below was recorded from runs of this library against a local server: the code on the left is the code that ran, and the terminal shows what it printed.</p>
+
+    <h2 id="same">The same call</h2>
+    <p>The only line that differs between the four is the one that makes the connection. After that, the request, the reply and the body are handled by the same four methods.</p>
+
+    <div class="tabs" role="tablist" aria-label="Protocol">
+      <button class="tab" type="button" role="tab" data-tab="h1" aria-selected="true">HTTP/1.1</button>
+      <button class="tab" type="button" role="tab" data-tab="h2" aria-selected="false" tabindex="-1">HTTP/2</button>
+      <button class="tab" type="button" role="tab" data-tab="h3" aria-selected="false" tabindex="-1">HTTP/3</button>
+      <button class="tab" type="button" role="tab" data-tab="ws" aria-selected="false" tabindex="-1">WebSocket</button>
+    </div>
+
+    <div class="panel" data-panel="h1">
+      <div class="codeblock">
+        <div class="codeblock__bar"><span>HTTP/1.1 · RFC 9112</span><button class="copy" type="button">copy</button></div>
+<pre><code>let conn = @h1.connect(host, port~, tls=tls)
+let (response, body) = @spec.call(
+  conn,
+  @spec.Request::new("POST", "/echo", body=@spec.Body::Bytes(b"abcdefghijkl")),
+)
+print(conn.kind(), response.status, body)</code></pre>
+        <div class="out">status 200
+alpn http/1.1
+body abcdefghijkl</div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="h2" hidden>
+      <div class="codeblock">
+        <div class="codeblock__bar"><span>HTTP/2 · RFC 9113</span><button class="copy" type="button">copy</button></div>
+<pre><code>let conn = @h2.connect(host, port~, tls=tls)
+let (response, body) = @spec.call(
+  conn,
+  @spec.Request::new("POST", "/echo", body=@spec.Body::Bytes(b"abcdefghijkl")),
+)
+print(conn.kind(), response.status, body)</code></pre>
+        <div class="out">status 200
+alpn h2
+body abcdefghijkl</div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="h3" hidden>
+      <div class="codeblock">
+        <div class="codeblock__bar"><span>HTTP/3 · RFC 9114</span><button class="copy" type="button">copy</button></div>
+<pre><code>let conn = @h3.connect(host, port~, tls=tls)
+let (response, body) = @spec.call(
+  conn,
+  @spec.Request::new("POST", "/echo", body=@spec.Body::Bytes(b"abcdefghijkl")),
+)
+print(conn.kind(), response.status, body)</code></pre>
+        <div class="out">status 200
+alpn h3
+body abcdefghijkl</div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="ws" hidden>
+      <div class="codeblock">
+        <div class="codeblock__bar"><span>WebSocket · RFC 6455</span><button class="copy" type="button">copy</button></div>
+<pre><code>let ws = @ws.connect(url, tls=tls)
+let stream = ws.open(@spec.Request::new("GET", "/chat"))
+let status = ws.response(stream).status
+ws.send_text("ping")
+let reply = ws.next()</code></pre>
+        <div class="out">status 101
+message ping</div>
+      </div>
+    </div>
+
+    <h2 id="wire">On the wire</h2>
+    <p>What the four do to carry that one exchange. Step through it: each line is one thing the client put out or took in.</p>
+
+    <div class="tabs" role="tablist" aria-label="Protocol, on the wire">
+      <button class="tab" type="button" role="tab" data-tab="wh1" aria-selected="true">HTTP/1.1</button>
+      <button class="tab" type="button" role="tab" data-tab="wh2" aria-selected="false" tabindex="-1">HTTP/2</button>
+      <button class="tab" type="button" role="tab" data-tab="wh3" aria-selected="false" tabindex="-1">HTTP/3</button>
+      <button class="tab" type="button" role="tab" data-tab="wws" aria-selected="false" tabindex="-1">WebSocket</button>
+    </div>
+
+    <div class="panel" data-panel="wh1">
+      <ol class="trace" data-trace>
+        <li><span><b>connect</b> — TCP, then a TLS 1.3 handshake offering <code>http/1.1</code>; the server picks it.</span></li>
+        <li><span><b>head</b> — <code>POST /echo HTTP/1.1</code> with <code>host</code> taken from the connection, and <code>content-length: 12</code>.</span></li>
+        <li><span><b>body</b> — the twelve octets, then nothing more: a declared length ends the request.</span></li>
+        <li><span><b>reply head</b> — <code>HTTP/1.1 200 OK</code> with its fields, read up to the blank line.</span></li>
+        <li><span><b>reply body</b> — twelve octets by the same declared length, so the connection is ready for the next exchange.</span></li>
+      </ol>
+    </div>
+
+    <div class="panel" data-panel="wh2" hidden>
+      <ol class="trace" data-trace>
+        <li><span><b>connect</b> — a TLS 1.3 handshake offering <code>h2</code>, then the preface <code>PRI * HTTP/2.0</code> and this side's <code>SETTINGS</code>.</span></li>
+        <li><span><b>open</b> — a <code>HEADERS</code> frame on stream 1 with <code>:method</code>, <code>:path</code>, <code>:scheme</code> and <code>:authority</code>, without <code>END_STREAM</code>.</span></li>
+        <li><span><b>body</b> — a <code>DATA</code> frame with the twelve octets, then <code>END_STREAM</code> on stream 1.</span></li>
+        <li><span><b>reply head</b> — <code>HEADERS</code> with <code>:status 200</code> on stream 1, routed to the exchange that opened it.</span></li>
+        <li><span><b>reply body</b> — <code>DATA</code>, the octets handed to the reader as they arrive, and each one credited back to the peer's window.</span></li>
+      </ol>
+    </div>
+
+    <div class="panel" data-panel="wh3" hidden>
+      <ol class="trace" data-trace>
+        <li><span><b>connect</b> — a QUIC handshake over UDP, TLS 1.3 inside it, offering <code>h3</code>; the client's first datagrams carry it.</span></li>
+        <li><span><b>settings</b> — a control stream declaring <code>SETTINGS</code>, with the QPACK dynamic table shut on both sides.</span></li>
+        <li><span><b>open</b> — a client-initiated bidirectional stream, a <code>HEADERS</code> frame with the request fields encoded statically.</span></li>
+        <li><span><b>body</b> — a <code>DATA</code> frame on the same stream, and the stream's send side ended.</span></li>
+        <li><span><b>reply</b> — <code>HEADERS</code> then <code>DATA</code> on that stream; frames on one stream keep their order, streams do not.</span></li>
+      </ol>
+    </div>
+
+    <div class="panel" data-panel="wws" hidden>
+      <ol class="trace" data-trace>
+        <li><span><b>connect</b> — TCP and TLS 1.3, then the upgrade is an HTTP/1.1 request with <code>upgrade: websocket</code> and a random key.</span></li>
+        <li><span><b>101</b> — the accept field is checked against that key; anything else is refused, not used.</span></li>
+        <li><span><b>text</b> — a text frame, masked with a key drawn per frame; a whole message in one frame here.</span></li>
+        <li><span><b>echo</b> — the server's unmasked text frame, reassembled if it arrives in fragments.</span></li>
+        <li><span><b>close</b> — a close frame ends the read; its code and reason stay on the connection.</span></li>
+      </ol>
+    </div>
+
+    <div class="stepper">
+      <button type="button" data-step="next">Next step</button>
+      <button type="button" data-step="reset">Reset</button>
+    </div>
+
+    <h2 id="what-differs">What differs, and what does not</h2>
+    <div class="two">
+      <div class="figure">
+        <pre>h1   one exchange per connection, in order
+h2   many streams, one connection
+h3   many streams, one QUIC connection
+ws   messages over an upgraded connection</pre>
+        <div class="figure__cap">readiness</div>
+      </div>
+      <div class="figure">
+        <pre>open → Stream
+send(Stream, Bytes, end~)
+response(Stream) → Response
+read(Stream) → Bytes?
+trailers(Stream) → Array[Field]</pre>
+        <div class="figure__cap">the five that never change</div>
+      </div>
+    </div>
+    <p><code>is_ready</code> is the one place the difference surfaces: false while an HTTP/1.1 exchange is in flight, true for the other three. A caller that keeps one connection per exchange can ignore it; a pool cannot, which is why the pool asks before it hands a connection out.</p>
+
+    <div class="note">
+      <p>The runs behind this page drove the four adapters against a local server over real sockets, and the output above is copied from them rather than written by hand. The <a href="guide.html">guide</a> shows the code each tab stands for in full.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__row">
+    <span>moonnet · Apache-2.0</span>
+    <span>
+      <a href="index.html">Home</a> ·
+      <a href="guide.html">Guide</a> ·
+      <a href="api.html">API</a> ·
+      <a href="https://github.com/moonbitstack/moonnet">GitHub</a>
+    </span>
+  </div>
+</footer>
+
+<script src="assets/js/site.js" defer></script>
+</body>
+</html>
