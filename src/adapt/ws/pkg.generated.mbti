@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/adapt/ws"
+
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moontls/tls",
+}
+
+// Values
+pub fn client(@tcp.Conn, host~ : String, scheme? : String) -> Conn
+
+pub async fn connect(StringView, tls? : @tls.Client, now? : Int64) -> Conn
+
+// Errors
+
+// Types and methods
+pub struct Conn {
+  sock : @tcp.Conn
+  scheme : String
+  host : String
+  mut target : String
+  key : String
+  stream : Int32
+  mut held : Bytes
+  reader : @moonbitstack/moonhttp/ws.Reader
+  mut opened : Bool
+  mut closed : Bool
+  mut code : Int32
+  mut why : String
+  mut head : @spec.Response?
+}
+pub async fn Conn::close(Self) -> Unit
+pub fn Conn::close_code(Self) -> Int32
+pub fn Conn::close_reason(Self) -> String
+pub fn Conn::is_closed(Self) -> Bool
+pub fn Conn::is_ready(Self) -> Bool
+pub fn Conn::kind(Self) -> String
+pub async fn Conn::next(Self) -> @moonbitstack/moonhttp/ws.Message? raise @spec.Refused
+pub async fn Conn::open(Self, @spec.Request) -> @spec.Stream
+pub async fn Conn::read(Self, @spec.Stream) -> Bytes?
+pub async fn Conn::response(Self, @spec.Stream) -> @spec.Response
+pub async fn Conn::send(Self, @spec.Stream, Bytes, end~ : Bool) -> Unit
+pub async fn Conn::send_binary(Self, Bytes) -> Unit raise @spec.Refused
+pub async fn Conn::send_text(Self, String) -> Unit raise @spec.Refused
+pub fn Conn::trailers(Self, @spec.Stream) -> Array[@spec.Field]
+pub impl @spec.Conn for Conn
+
+// Type aliases
+
+// Traits

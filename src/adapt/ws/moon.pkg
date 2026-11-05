@@ -1,0 +1,42 @@
+// WebSocket over a connection: the upgrade of RFC 6455 §4 and the frames of §5, with the
+// session presented as one exchange of the contract in `spec`.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonbase/base64",
+  "moonbitstack/mooncrypt/hash/sha1",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonhttp/http1",
+  "moonbitstack/moonhttp/ws" @frame,
+  "moonbitstack/moonurl" @url,
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
+}
+
+import {
+  "moonbitstack/moonnet/adapt/ws",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonbase/base64",
+  "moonbitstack/mooncrypt/hash/sha1",
+  "moonbitstack/moonhttp/http1",
+  "moonbitstack/moonhttp/ws" @frame,
+  "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: {
+    "ws.mbt": [ "native", "wasm" ],
+    "ws_test.mbt": [ "native", "wasm" ],
+  },
+)
