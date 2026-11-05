@@ -328,10 +328,13 @@ def build():
         prefix = slug.replace("/", "-") or "root"
         index.append(f'<a href="#pkg-{prefix}">{html.escape(title)}</a>')
 
-    page = TEMPLATE.format(
-        toc="\n".join(toc),
-        index="\n".join(index),
-        body="\n".join(body),
+    # Plain replacement rather than str.format: the page carries a script whose braces are its
+    # own, and doubling every one of them to please the formatter would be a trap for the next
+    # person who edits it.
+    page = (
+        TEMPLATE.replace("{toc}", "\n".join(toc))
+        .replace("{index}", "\n".join(index))
+        .replace("{body}", "\n".join(body))
     )
     OUT.write_text(page, encoding="utf-8", newline="\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
@@ -342,6 +345,17 @@ TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // The system decides until the reader does, and it is decided before the first paint: a dark
+  // machine would otherwise flash a white page while the stylesheet loads.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("moonnet-theme"); } catch (e) {}
+    if (t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+</script>
 <title>API reference · moonnet</title>
 <meta name="description" content="Every public value, type, method and error in moonnet, generated from the package interfaces and their documentation comments.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230C1116'/><path d='M6 11h20M6 21h20' stroke='%2340C8B4' stroke-width='2'/><circle cx='11' cy='11' r='2.4' fill='%23F0B357'/><circle cx='21' cy='21' r='2.4' fill='%23F0B357'/></svg>">

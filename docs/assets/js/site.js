@@ -13,31 +13,44 @@
   markTop();
 
   // ---- theme ----
-  function applyTheme(t) {
+  // Light or dark is the machine's decision until the reader makes one. The first paint was
+  // already given the right theme by the small script in <head>; here the choice is remembered
+  // only when it is made, and the system is followed while there is no choice to remember.
+  var KEY = "moonnet-theme";
+
+  function remembered() {
+    try {
+      return localStorage.getItem(KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyTheme(t, remember) {
     if (t === "dark") root.setAttribute("data-theme", "dark");
     else root.removeAttribute("data-theme");
     document.querySelectorAll(".nav__toggle").forEach(function (b) {
       b.setAttribute("aria-pressed", String(t === "dark"));
     });
-    try {
-      localStorage.setItem("moonnet-theme", t);
-    } catch (e) {}
+    if (remember) {
+      try {
+        localStorage.setItem(KEY, t);
+      } catch (e) {}
+    }
   }
-  var saved = null;
-  try {
-    saved = localStorage.getItem("moonnet-theme");
-  } catch (e) {}
-  if (!saved) {
-    saved =
-      window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+
+  applyTheme(root.getAttribute("data-theme") === "dark" ? "dark" : "light");
+
+  var scheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  if (scheme && scheme.addEventListener) {
+    scheme.addEventListener("change", function (e) {
+      if (!remembered()) applyTheme(e.matches ? "dark" : "light");
+    });
   }
-  applyTheme(saved);
 
   document.querySelectorAll(".nav__toggle").forEach(function (b) {
     b.addEventListener("click", function () {
-      applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+      applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark", true);
     });
   });
 
