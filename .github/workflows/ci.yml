@@ -133,3 +133,25 @@ jobs:
         run: |
           moon update
           bash scripts/http_interop.sh
+
+  websocket:
+    name: WebSocket conformance
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: install
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      # The suite is Autobahn's, in a container; the client under test is this repository's, and
+      # the verdict is the server's report.
+      - name: autobahn
+        run: |
+          moon update
+          bash scripts/ws_conformance.sh

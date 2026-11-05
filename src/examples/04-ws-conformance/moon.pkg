@@ -1,0 +1,22 @@
+// The client end of the WebSocket conformance run: it asks a fuzzing server how many cases it
+// has, plays each one by echoing what it is sent, and asks for the report to be written.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet/adapt/ws",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonhttp/ws" @frame,
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)
