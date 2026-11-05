@@ -10,17 +10,17 @@
 set -uo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-client="$root/_build/native/debug/build/examples/01-interop/01-interop.exe"
-peer="$root/integration/mooncat-peer/_build/native/debug/build/main/main.exe"
 work="$(mktemp -d)"
 failures=0
 
-case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*) exe=".exe" ;;
-  *) exe="" ;;
-esac
-client="$root/_build/native/debug/build/examples/01-interop/01-interop$exe"
-peer="$root/integration/mooncat-peer/_build/native/debug/build/main/main$exe"
+# The build names the binaries, and whether it adds an extension is its business: find them
+# rather than guess.
+binary() {
+  local dir="$1" name="$2" found
+  found="$(cd "$dir" && ls -1 2>/dev/null | grep -E "^$name(\\.exe)?$" | head -1)"
+  [ -n "$found" ] || { echo "no $name under $dir" >&2; exit 1; }
+  echo "$dir/$found"
+}
 
 cleanup() {
   [ -n "${peer_pid:-}" ] && kill "$peer_pid" 2>/dev/null
@@ -33,6 +33,9 @@ if [ -z "${MOONNET_NO_BUILD:-}" ]; then
   (cd "$root" && moon build --target native) || exit 1
   (cd "$root/integration/mooncat-peer" && moon build --target native) || exit 1
 fi
+
+client="$(binary "$root/_build/native/debug/build/examples/01-interop" 01-interop)"
+peer="$(binary "$root/integration/mooncat-peer/_build/native/debug/build/main" main)"
 
 certs() {
   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -days 2 -nodes \
