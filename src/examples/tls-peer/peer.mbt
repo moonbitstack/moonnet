@@ -87,6 +87,8 @@ fn versions_of(names : Array[String]?) -> Array[@tls.Version]? {
 ///|
 fn version_name(version : @tls.Version?) -> String {
   match version {
+    Some(Tls10) => "1.0"
+    Some(Tls11) => "1.1"
     Some(Tls12) => "1.2"
     Some(Tls13) => "1.3"
     None => "-"

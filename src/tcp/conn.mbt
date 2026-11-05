@@ -41,13 +41,20 @@ pub fn Conn::plain(sock : @socket.Tcp) -> Conn {
 
 ///|
 /// The server side of a TLS connection, returned once the handshake is done. A handshake the
-/// client fails raises the alert, after it has been sent.
+/// client fails raises the alert, after it has been sent. `now`, in seconds since the epoch, is
+/// what tickets are issued and judged at and a client's certificate is judged at; the system clock
+/// when not given.
 pub async fn Conn::server(
   sock : @socket.Tcp,
   config : @tls.Server,
   rand? : (Int32) -> Bytes,
+  now? : Int64,
 ) -> Conn {
-  let tls = @tls.Conn::server(config, rand=rand.unwrap_or(entropy))
+  let tls = @tls.Conn::server(
+    config,
+    rand=rand.unwrap_or(entropy),
+    now=now.unwrap_or(clock()),
+  )
   Conn::new(sock, Some(tls))..handshake()
 }
 
@@ -95,9 +102,14 @@ pub async fn Conn::secure(
   self : Conn,
   config : @tls.Server,
   rand? : (Int32) -> Bytes,
+  now? : Int64,
 ) -> Conn {
   guard self.tls is None else { raise Secured }
-  let tls = @tls.Conn::server(config, rand=rand.unwrap_or(entropy))
+  let tls = @tls.Conn::server(
+    config,
+    rand=rand.unwrap_or(entropy),
+    now=now.unwrap_or(clock()),
+  )
   let ahead = self.ahead[self.at:]
   if ahead.length() > 0 {
     tls.receive(ahead)

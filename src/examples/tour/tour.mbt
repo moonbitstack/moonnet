@@ -12,7 +12,11 @@
 async fn main {
   let key = @ecdsa.PrivateKey::new(@env.rand(32).unwrap()[:])
   let cert = @x509.self_signed(
-    key, b"\x01", "tour", "250101000000Z", "350101000000Z",
+    key=Ec(key),
+    cn="tour",
+    serial=b"\x01",
+    not_before=1735689600L,
+    not_after=2051222400L,
   )
   let server = @tls.Server::new([cert], Ec(key), alpn=["echo"])
   let pinned : @tls.Verify = Custom((chain, _) => {
