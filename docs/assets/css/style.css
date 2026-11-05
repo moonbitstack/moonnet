@@ -128,25 +128,41 @@ body {
   html.at-top::-webkit-scrollbar-thumb {
     background-color: transparent;
   }
-  .scroll::-webkit-scrollbar,
-  .toc::-webkit-scrollbar {
+  .toc::-webkit-scrollbar,
+  .codeblock pre::-webkit-scrollbar,
+  .table-wrap::-webkit-scrollbar,
+  .figure pre::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
-  .scroll::-webkit-scrollbar-track,
-  .toc::-webkit-scrollbar-track {
+  .toc::-webkit-scrollbar-track,
+  .codeblock pre::-webkit-scrollbar-track,
+  .table-wrap::-webkit-scrollbar-track,
+  .figure pre::-webkit-scrollbar-track {
     background: transparent;
   }
-  .scroll::-webkit-scrollbar-thumb,
-  .toc::-webkit-scrollbar-thumb {
+  .toc::-webkit-scrollbar-thumb,
+  .codeblock pre::-webkit-scrollbar-thumb,
+  .table-wrap::-webkit-scrollbar-thumb,
+  .figure pre::-webkit-scrollbar-thumb {
     border: 3px solid transparent;
     border-radius: 99px;
     background-clip: content-box;
     background-color: color-mix(in srgb, var(--ink) 14%, transparent);
   }
-  .scroll:hover::-webkit-scrollbar-thumb,
-  .toc:hover::-webkit-scrollbar-thumb {
+  .toc:hover::-webkit-scrollbar-thumb,
+  .codeblock pre:hover::-webkit-scrollbar-thumb,
+  .table-wrap:hover::-webkit-scrollbar-thumb,
+  .figure pre:hover::-webkit-scrollbar-thumb {
     background-color: color-mix(in srgb, var(--ink) 34%, transparent);
+  }
+
+  /* On the dark panels the thumb has to come from the code ink, not from the page's. */
+  .codeblock pre::-webkit-scrollbar-thumb {
+    background-color: rgba(221, 232, 230, 0.18);
+  }
+  .codeblock pre:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(221, 232, 230, 0.34);
   }
 }
 
@@ -1188,7 +1204,7 @@ td code {
 .page-guide .content h2::before {
   content: counter(step, decimal-leading-zero);
   position: absolute;
-  left: -84px;
+  left: -92px;
   width: 26px;
   text-align: right;
   top: 24px;
@@ -1244,17 +1260,6 @@ td code {
   max-width: none;
 }
 
-.note--warn {
-  border-color: color-mix(in srgb, var(--amber) 30%, var(--line));
-  border-left-color: var(--amber);
-  background: color-mix(in srgb, var(--amber) 8%, var(--paper));
-}
-
-.note--warn::before {
-  content: "!";
-  background: var(--amber);
-  font-style: normal;
-}
 
 /* ---- API --------------------------------------------------------------- */
 
@@ -1455,56 +1460,6 @@ td code {
   display: none;
 }
 
-.terminal {
-  border: 1px solid color-mix(in srgb, var(--code-ink) 12%, transparent);
-  border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--code-bg-2), var(--code-bg));
-  box-shadow: var(--shadow-2);
-  margin: 18px 0 4px;
-  overflow: hidden;
-}
-
-.terminal__bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--code-line);
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--code-dim);
-}
-
-.terminal__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--code-ink) 16%, transparent);
-  flex: none;
-}
-
-.terminal__bar .path {
-  margin-left: 10px;
-}
-
-.terminal pre {
-  margin: 0;
-  padding: 18px;
-  overflow-x: auto;
-  color: var(--code-ink);
-  font-size: 13px;
-  line-height: 1.75;
-}
-
-.terminal .prompt {
-  color: var(--code-key);
-}
-
-.terminal .say {
-  color: var(--code-str);
-}
 
 .two {
   display: grid;
@@ -1841,8 +1796,7 @@ td code {
     font-size: 40px;
   }
 
-  .codeblock pre,
-  .terminal pre {
+  .codeblock pre {
     font-size: 12.3px;
   }
 
