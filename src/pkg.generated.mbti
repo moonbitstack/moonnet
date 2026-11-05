@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet"
+
+import {
+  "moonbitlang/async/socket",
+  "moonbitstack/mooncred/x509",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonnet/udp",
+  "moonbitstack/moontls/tls",
+}
+
+// Values
+pub async fn bind(host? : String, port? : Int32) -> @udp.Socket
+
+pub async fn connect(StringView, alpn? : Array[String], roots? : @x509.Roots, now? : Int64) -> Opened
+
+pub async fn dial(String, port~ : Int32, tls? : @tls.Client, now? : Int64) -> @tcp.Conn
+
+pub async fn listen(host? : String, port? : Int32, tls? : @tls.Server, reuse_addr? : Bool, handshake? : Int32?, cleartext? : Bool) -> @tcp.Listener
+
+pub async fn serve(async (@tcp.Conn, @socket.Addr) -> Unit, host? : String, port? : Int32, tls? : @tls.Server, limit? : Int32, reuse_addr? : Bool, handshake? : Int32?) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) struct Opened {
+  conn : @tcp.Conn
+  alpn : String
+  target : String
+}
+
+// Type aliases
+pub using @spec {type Body}
+
+pub using @tcp {type Conn}
+
+pub using @spec {type Field}
+
+pub using @tcp {type Listener}
+
+pub using @spec {type Refused}
+
+pub using @spec {type Request}
+
+pub using @spec {type Response}
+
+pub using @udp {type Socket}
+
+pub using @spec {type Stream}
+
+// Traits
