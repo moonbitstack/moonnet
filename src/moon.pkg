@@ -1,0 +1,30 @@
+// The front door: the connection, the datagram socket and the contract, under one import.
+// The wire formats and the adapters are not re-exported — a caller that wants one names it,
+// and nothing is linked for the ones they do not.
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonnet/udp",
+  "moonbitstack/mooncred/roots",
+  "moonbitstack/mooncred/x509",
+  "moonbitstack/moonurl" @url,
+  "moonbitstack/moontls/tls",
+}
+
+// The sockets this re-exports exist on the native and wasm backends, so the front door does
+// too; elsewhere this package is empty.
+
+warnings = "-29"
+
+import {
+  "moonbitstack/moonnet",
+  "moonbitstack/moonnet/spec",
+  "moonbitlang/async",
+} for "test"
+
+options(
+  targets: {
+    "moonnet.mbt": [ "native", "wasm" ],
+    "moonnet_test.mbt": [ "native", "wasm" ],
+  },
+)
