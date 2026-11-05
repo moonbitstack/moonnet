@@ -10,54 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
-<style>
-  .trace { list-style: none; margin: 16px 0 0; padding: 0; counter-reset: t; }
-  .trace li {
-    display: grid;
-    grid-template-columns: 26px minmax(0, 1fr);
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--line-2);
-    font-size: 13.6px;
-    color: var(--muted);
-    opacity: 0.42;
-    transition: opacity 0.18s ease;
-  }
-  .trace li::before {
-    counter-increment: t;
-    content: counter(t);
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    padding-top: 2px;
-  }
-  .trace li.is-on {
-    opacity: 1;
-    color: var(--ink-2);
-  }
-  .trace b {
-    font-family: var(--mono);
-    font-size: 12.6px;
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .stepper { display: flex; gap: 8px; margin-top: 14px; }
-  .stepper button {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    padding: 6px 11px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: none;
-    color: var(--ink-2);
-    cursor: pointer;
-  }
-  .stepper button:hover { border-color: var(--ink); }
-  @media (prefers-reduced-motion: reduce) { .trace li { transition: none; } }
-</style>
+
 </head>
-<body>
+<body class="page-showcase">
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav">

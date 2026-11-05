@@ -51,6 +51,34 @@
     });
   }
 
+  // The packets on the hero's lanes are SVG motion, which CSS cannot switch off; the reader's
+  // preference is asked for once and the animations are removed rather than hidden.
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.querySelectorAll("animateMotion").forEach(function (m) {
+      m.remove();
+    });
+  }
+
+  // ---- colour in the code blocks ----
+  // Comments, strings, keywords and numbers, painted without touching the text: a copy of the
+  // block still yields what the reader sees. Deliberately small — this is a documentation page,
+  // not an editor, and a wrong colour is worse than none.
+  var TOKEN =
+    /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|\b(async|fn|let|mut|match|if|else|guard|while|for|in|return|raise|try|catch|type|pub|struct|enum|trait|impl|using|const|true|false|Some|None)\b|\b(\d+(?:\.\d+)?)\b/g;
+  var esc = function (t) {
+    return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+  document.querySelectorAll(".codeblock pre code").forEach(function (code) {
+    var text = code.textContent;
+    code.innerHTML = esc(text).replace(TOKEN, function (all, com, str, kw, num) {
+      if (com) return '<span class="com">' + com + "</span>";
+      if (str) return '<span class="str">' + str + "</span>";
+      if (kw) return '<span class="kw">' + kw + "</span>";
+      if (num) return '<span class="num">' + num + "</span>";
+      return all;
+    });
+  });
+
   // ---- copy ----
   document.querySelectorAll(".codeblock .copy").forEach(function (btn) {
     btn.addEventListener("click", function () {

@@ -43,32 +43,74 @@
     <div class="wrap hero__grid">
       <div>
         <p class="eyebrow">The connection layer</p>
-        <h1>One request. Four protocols. <em>The same contract.</em></h1>
+        <h1>One request.<br>Four protocols.<br><em>One contract.</em></h1>
         <p class="lead">HTTP/1.1, HTTP/2, HTTP/3 and WebSocket all answer the same eight methods — open an exchange, send a body, read a head and a body. What carries it is a detail the code above never sees.</p>
         <div class="hero__actions">
-          <a class="btn" href="guide.html">Start with a connection</a>
+          <a class="btn" href="guide.html">
+            Start with a connection
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+          </a>
           <a class="btn btn--ghost" href="showcase.html">See it on the wire</a>
         </div>
+        <p class="hero__proof">
+          <span>HTTP/1.1</span><span>HTTP/2</span><span>HTTP/3</span><span>WebSocket</span>
+        </p>
       </div>
-      <div class="stack" aria-label="The layers of the library">
-        <div class="stack__head"><span>what sits on what</span><span>moonnet</span></div>
-        <div class="stack__layer stack__layer--contract">
-          <span class="stack__name">moonnet/spec</span><span class="stack__tag">contract</span>
-          <span class="stack__note">open · send · response · read · trailers · is_ready · kind · close</span>
-        </div>
-        <div class="stack__layer">
-          <span class="stack__name">adapt/h1 · h2 · h3 · ws</span><span class="stack__tag">adapters</span>
-          <span class="stack__note">one implementation each, no protocol word above them</span>
-        </div>
-        <div class="stack__layer">
-          <span class="stack__name">moonnet/tcp · moonnet/udp</span><span class="stack__tag">transport</span>
-          <span class="stack__note">TLS 1.3 over TCP, and QUIC over UDP</span>
-        </div>
-        <div class="stack__layer stack__layer--sockets">
-          <span class="stack__name">sockets</span><span class="stack__tag">kernel</span>
-          <span class="stack__note">the only layer that touches a file descriptor</span>
-        </div>
-      </div>
+
+      <figure class="fan" aria-label="One call through four protocols, and one reply">
+        <div class="fan__head"><span>one call<i class="fan__tls"> · tls 1.3</i></span><b>four carriers</b></div>
+        <svg viewBox="0 0 560 420" role="img" aria-label="A call leaves one client node, travels along four lanes labelled HTTP/1.1, HTTP/2, HTTP/3 and WebSocket, and arrives at one server node as a single reply.">
+          <text class="side" x="79" y="24" text-anchor="middle">CLIENT</text>
+          <text class="side" x="481" y="24" text-anchor="middle">SERVER</text>
+          <path class="hair" d="M6 34h548" opacity="0.7"/>
+
+          <g class="node">
+            <rect x="6" y="170" width="146" height="80" rx="10"/>
+            <text class="node-title" x="79" y="202" text-anchor="middle">conn.open()</text>
+            <text class="node-sub" x="79" y="222" text-anchor="middle">request</text>
+          </g>
+          <g class="node node--signal">
+            <rect x="408" y="170" width="146" height="80" rx="10"/>
+            <text class="node-title" x="481" y="202" text-anchor="middle">response</text>
+            <text class="node-sub" x="481" y="222" text-anchor="middle">head · body</text>
+          </g>
+
+          <path id="lane1" class="lane lane-1" d="M152 210 C 206 210, 208 66, 278 66 H 330 C 400 66, 404 210, 408 210"/>
+          <path id="lane2" class="lane lane-2" d="M152 210 C 206 210, 208 158, 278 158 H 330 C 400 158, 404 210, 408 210"/>
+          <path id="lane3" class="lane lane-3" d="M152 210 C 206 210, 208 262, 278 262 H 330 C 400 262, 404 210, 408 210"/>
+          <path id="lane4" class="lane lane-4" d="M152 210 C 206 210, 208 354, 278 354 H 330 C 400 354, 404 210, 408 210"/>
+
+          <circle class="pkt" r="3.4">
+            <animateMotion dur="5.5s" begin="0s" repeatCount="indefinite" calcMode="linear">
+              <mpath href="#lane1"/>
+            </animateMotion>
+          </circle>
+          <circle class="pkt" r="3.4">
+            <animateMotion dur="5.5s" begin="1.4s" repeatCount="indefinite" calcMode="linear">
+              <mpath href="#lane2"/>
+            </animateMotion>
+          </circle>
+          <circle class="pkt" r="3.4">
+            <animateMotion dur="5.5s" begin="2.8s" repeatCount="indefinite" calcMode="linear">
+              <mpath href="#lane3"/>
+            </animateMotion>
+          </circle>
+          <circle class="pkt" r="3.4">
+            <animateMotion dur="5.5s" begin="4.2s" repeatCount="indefinite" calcMode="linear">
+              <mpath href="#lane4"/>
+            </animateMotion>
+          </circle>
+
+          <circle cx="152" cy="210" r="3" fill="var(--signal)"/>
+          <circle cx="408" cy="210" r="3" fill="var(--signal)"/>
+
+          <text class="tag" x="304" y="52" text-anchor="middle">http/1.1</text>
+          <text class="tag" x="304" y="144" text-anchor="middle">h2</text>
+          <text class="tag" x="304" y="248" text-anchor="middle">h3</text>
+          <text class="tag" x="304" y="340" text-anchor="middle">ws</text>
+        </svg>
+        <figcaption>Four wires, one set of methods: <code>open</code>, <code>send</code>, <code>response</code>, <code>read</code>.</figcaption>
+      </figure>
     </div>
   </section>
 
@@ -110,24 +152,32 @@ println(get(h1, "/status"))</code></pre>
       </div>
       <div class="cards">
         <div class="card">
+          <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12h18"/><circle cx="7" cy="12" r="2.2"/><circle cx="17" cy="12" r="2.2"/></svg></span>
           <div class="card__label">RFC 9112</div>
           <h3>HTTP/1.1</h3>
           <p>Bodies by length, by chunk, or to the close. A reply that stops short of its length raises instead of returning half a body. One exchange at a time, and it says so.</p>
+          <div class="card__meta">one exchange · content-length <br> chunked · close</div>
         </div>
         <div class="card">
+          <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h14M3 12h18M3 18h9"/><circle cx="20" cy="6" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
           <div class="card__label">RFC 9113</div>
           <h3>HTTP/2</h3>
           <p>Preface and settings on connect, an exchange per stream, flow control both ways. A body larger than the window still goes out; a reply larger than it still arrives.</p>
+          <div class="card__meta">preface · settings <br> a stream per exchange</div>
         </div>
         <div class="card">
+          <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2 5 14h6l-1 8 9-13h-6l0-7Z"/></svg></span>
           <div class="card__label">RFC 9114</div>
           <h3>HTTP/3</h3>
           <p>Over QUIC on a datagram socket. Settings on a control stream, the QPACK dynamic table shut, and an exchange per bidirectional stream.</p>
+          <div class="card__meta">quic datagrams <br> qpack static</div>
         </div>
         <div class="card">
+          <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9h11l-3-3M20 15H9l3 3"/></svg></span>
           <div class="card__label">RFC 6455</div>
           <h3>WebSocket</h3>
           <p>The upgrade is the exchange; after it, a read yields whole messages, a ping is answered before you see the next one, and a close keeps its code.</p>
+          <div class="card__meta">101 upgrade <br> messages · ping · close</div>
         </div>
       </div>
     </div>
@@ -231,7 +281,10 @@ let (response, body) = @spec.call(conn, @spec.Request::new("GET", opened.target)
 
 <footer class="footer">
   <div class="wrap footer__row">
-    <span>moonnet · Apache-2.0</span>
+    <span class="footer__brand">
+      <svg viewBox="0 0 32 24" aria-hidden="true"><path d="M2 6h28M2 18h28" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="23" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      moonnet · Apache-2.0
+    </span>
     <span>
       <a href="guide.html">Guide</a> ·
       <a href="api.html">API</a> ·

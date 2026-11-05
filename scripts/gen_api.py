@@ -314,6 +314,7 @@ def package_block(slug, title, blurb, docs, values, types, traits, impls):
 def build():
     body = []
     toc = []
+    index = []
     for slug, title, blurb in PACKAGES:
         directory = ROOT / "src" / slug if slug else ROOT / "src"
         mbti = directory / MBTI
@@ -324,8 +325,14 @@ def build():
         block, lines = package_block(slug, title, blurb, docs, values, types, traits, impls)
         body.append(block)
         toc.extend(lines)
+        prefix = slug.replace("/", "-") or "root"
+        index.append(f'<a href="#pkg-{prefix}">{html.escape(title)}</a>')
 
-    page = TEMPLATE.format(toc="\n".join(toc), body="\n".join(body))
+    page = TEMPLATE.format(
+        toc="\n".join(toc),
+        index="\n".join(index),
+        body="\n".join(body),
+    )
     OUT.write_text(page, encoding="utf-8", newline="\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
 
@@ -377,6 +384,9 @@ TEMPLATE = """<!DOCTYPE html>
     <p class="eyebrow">API reference</p>
     <h1 class="page-title">The whole surface, by package.</h1>
     <p class="lead">Every public value, type, method and error, generated from the package interfaces and the comments beside the code.</p>
+    <nav class="pkg-index" aria-label="Packages">
+{index}
+    </nav>
 {body}
   </div>
 </main>
