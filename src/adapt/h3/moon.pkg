@@ -1,0 +1,29 @@
+// HTTP/3 over QUIC: the messages of RFC 9114 on top of the datagram connection in `udp`,
+// presented as the one contract in `spec`.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/udp",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonhttp/http3",
+  "moonbitstack/moonhttp/qpack",
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/core/buffer",
+}
+
+import {
+  "moonbitstack/moonnet/adapt/h3",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/udp",
+  "moonbitlang/async",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: { "h3.mbt": [ "native", "wasm" ], "h3_test.mbt": [ "native" ] },
+)

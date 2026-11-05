@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/udp"
+
+import {
+  "moonbitlang/async/socket",
+  "moonbitlang/core/debug",
+  "moonbitstack/moonquic/conn",
+  "moonbitstack/moontls/tls",
+}
+
+// Values
+pub async fn bind(host? : String, port? : Int32) -> Socket
+
+pub async fn dial(String, port~ : Int32, tls~ : @tls.Client, idle? : UInt64) -> Quic
+
+pub fn now() -> Int64
+
+// Errors
+#derive(Eq, @debug.Debug)
+pub(all) suberror QuicRefused {
+  Timeout
+  Broken(String)
+  Closed
+}
+pub fn QuicRefused::equal(Self, Self) -> Bool
+pub fn QuicRefused::not_equal(Self, Self) -> Bool
+pub fn QuicRefused::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub struct Quic {
+  socket : Socket
+  to : @socket.Addr
+  client : @conn.Client
+  mut bi : UInt64
+  mut uni : UInt64
+  mut dead : Bool
+  seen : Map[UInt64, Bool]
+}
+pub fn Quic::alpn(Self) -> String?
+pub fn Quic::close(Self) -> Unit
+pub fn Quic::ended(Self, UInt64) -> Bool
+pub fn Quic::open_bi(Self) -> UInt64
+pub fn Quic::open_uni(Self) -> UInt64
+pub async fn Quic::step(Self, timeout? : Int32) -> Bool raise QuicRefused
+pub fn Quic::take(Self, UInt64) -> Bytes
+pub fn Quic::write(Self, UInt64, Bytes, fin? : Bool) -> Unit
+
+pub struct Socket {
+  sock : @socket.UdpServer
+}
+pub fn Socket::addr(Self) -> @socket.Addr
+pub fn Socket::close(Self) -> Unit
+pub async fn Socket::recv(Self, max? : Int32, timeout? : Int32) -> (Bytes, @socket.Addr)?
+pub async fn Socket::send(Self, @socket.Addr, Bytes) -> Unit
+
+// Type aliases
+
+// Traits

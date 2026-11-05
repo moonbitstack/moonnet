@@ -1,0 +1,31 @@
+// UDP and QUIC over it: the datagram socket, and the two ends of a QUIC connection that
+// moonnet's HTTP/3 adapter and a server built on it both run on.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonquic/conn",
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "moonbitlang/core/env",
+}
+
+import {
+  "moonbitstack/moonnet/udp",
+  "moonbitstack/moonquic/conn",
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: {
+    "socket.mbt": [ "native", "wasm" ],
+    "quic.mbt": [ "native", "wasm" ],
+    "socket_test.mbt": [ "native", "wasm" ],
+  },
+)
