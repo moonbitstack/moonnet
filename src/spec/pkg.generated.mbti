@@ -1,0 +1,96 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/spec"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub async fn call(&Conn, Request) -> (Response, Bytes)
+
+pub fn find(Array[Field], String) -> String?
+
+pub fn lines(Array[Field]) -> String
+
+pub async fn read_to_end(&Conn, Stream, limit? : Int32) -> Bytes
+
+pub fn table(Array[Field]) -> Map[String, String]
+
+// Errors
+#derive(Eq, @debug.Debug)
+pub(all) suberror Refused {
+  Malformed(String)
+  Unsupported(String)
+  Closed
+  Broken(String)
+}
+pub fn Refused::equal(Self, Self) -> Bool
+pub fn Refused::not_equal(Self, Self) -> Bool
+pub fn Refused::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+#derive(Eq, @debug.Debug)
+pub(all) enum Body {
+  Empty
+  Bytes(Bytes)
+  Streaming
+}
+pub fn Body::equal(Self, Self) -> Bool
+pub fn Body::not_equal(Self, Self) -> Bool
+pub fn Body::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Field {
+  name : String
+  value : String
+}
+pub fn Field::equal(Self, Self) -> Bool
+pub fn Field::key(Self) -> String
+pub fn Field::new(String, String) -> Self
+pub fn Field::not_equal(Self, Self) -> Bool
+pub fn Field::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Request {
+  verb : String
+  target : String
+  fields : Array[Field]
+  body : Body
+}
+pub fn Request::equal(Self, Self) -> Bool
+pub fn Request::field(Self, String) -> String?
+pub fn Request::new(String, String, fields? : Array[Field], body? : Body) -> Self
+pub fn Request::not_equal(Self, Self) -> Bool
+pub fn Request::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Response {
+  status : Int32
+  fields : Array[Field]
+}
+pub fn Response::equal(Self, Self) -> Bool
+pub fn Response::field(Self, String) -> String?
+pub fn Response::not_equal(Self, Self) -> Bool
+pub fn Response::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Stream {
+  id : Int32
+}
+pub fn Stream::equal(Self, Self) -> Bool
+pub fn Stream::not_equal(Self, Self) -> Bool
+pub fn Stream::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits
+pub(open) trait Conn {
+  async fn open(Self, Request) -> Stream
+  async fn send(Self, Stream, Bytes, end~ : Bool) -> Unit
+  async fn response(Self, Stream) -> Response
+  async fn read(Self, Stream) -> Bytes?
+  fn trailers(Self, Stream) -> Array[Field]
+  fn is_ready(Self) -> Bool
+  fn kind(Self) -> String
+  async fn close(Self) -> Unit
+}

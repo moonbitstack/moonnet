@@ -1,0 +1,8 @@
+// The contract every connection in this module presents, and the one place a protocol
+// stops being visible to the code above it.
+//
+// Sockets exist on the native and wasm backends only, so a package that drives one says
+// so in its own manifest; this one holds no socket.
+import {
+  "moonbitlang/core/buffer",
+}
