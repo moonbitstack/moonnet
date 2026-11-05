@@ -1,0 +1,22 @@
+// An app for moonnet's interop runs: HTTP/1.1, HTTP/2, HTTP/3 and WebSocket over one port,
+// so that the four adapters can be driven against a server of the family's own.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/mooncat",
+  "moonbitstack/mooncat/quic",
+  "moonbitstack/moonasgi",
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/core/encoding/utf8",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native" ],
+    "elsewhere.mbt": [ "js", "wasm", "wasm-gc" ],
+  },
+)

@@ -1,0 +1,33 @@
+// A client that speaks each of the four protocols through the one contract, for
+// scripts/http_interop.sh to drive against another server (nginx, or a server built on
+// mooncat). What it prints is the same whatever carried it, which is the point.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/adapt/h1",
+  "moonbitstack/moonnet/adapt/h2",
+  "moonbitstack/moonnet/adapt/h3",
+  "moonbitstack/moonnet/adapt/ws",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/mooncred/roots",
+  "moonbitstack/mooncred/x509",
+  "moonbitstack/moonhttp/ws" @frame,
+  "moonbitstack/moonurl" @url,
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/core/env",
+  "moonbitlang/core/encoding/utf8",
+}
+
+// On js and wasm-gc the sockets this drives do not exist, so the package is empty there.
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)

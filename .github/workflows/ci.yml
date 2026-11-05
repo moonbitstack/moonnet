@@ -96,3 +96,25 @@ jobs:
           python3 -m venv _venv
           _venv/bin/pip install --quiet "tlslite-ng @ git+https://github.com/tlsfuzzer/tlslite-ng@$TLSLITE_COMMIT" ecdsa
           TLSFUZZER=_tlsfuzzer PYTHON=_venv/bin/python bash scripts/tls_fuzz.sh
+
+  interop:
+    name: Real traffic through every adapter
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: install
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      # HTTP/1.1, HTTP/2, HTTP/3 and WebSocket against nginx in a container and against a
+      # server built on mooncat, over real sockets. Docker is on the runner already.
+      - name: real traffic
+        run: |
+          moon update
+          bash scripts/http_interop.sh
