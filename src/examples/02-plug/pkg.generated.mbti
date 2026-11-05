@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/examples/02-plug"
+
+import {
+  "moonbitstack/moonnet/spec",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Table {
+  answers : Map[String, String]
+  mut next : Int32
+  mut target : String
+  mut served : Bool
+}
+pub async fn Table::close(Self) -> Unit
+pub fn Table::is_ready(Self) -> Bool
+pub fn Table::kind(Self) -> String
+pub fn Table::new(Map[String, String]) -> Self
+pub async fn Table::open(Self, @spec.Request) -> @spec.Stream
+pub async fn Table::read(Self, @spec.Stream) -> Bytes?
+pub async fn Table::response(Self, @spec.Stream) -> @spec.Response
+pub async fn Table::send(Self, @spec.Stream, Bytes, end~ : Bool) -> Unit
+pub fn Table::trailers(Self, @spec.Stream) -> Array[@spec.Field]
+pub impl @spec.Conn for Table
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,19 @@
+// A connection that implements the contract outside this library's packages: the exchange it
+// answers never touches a socket, which is the point — an implementation is all a protocol
+// needs, and the code above it does not change.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)
