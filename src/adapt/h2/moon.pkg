@@ -1,0 +1,35 @@
+// HTTP/2 over a connection: the framing of RFC 9113 on top of moonnet's tcp connection,
+// presented as the one contract in `spec`.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonhttp/http2",
+  "moonbitstack/moontls/tls",
+  "moonbitlang/async",
+  "moonbitlang/core/strconv",
+}
+
+import {
+  "moonbitstack/moonnet/adapt/h2",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonhttp/http2",
+  "moonbitlang/async",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: {
+    "h2.mbt": [ "native", "wasm" ],
+    "h2_test.mbt": [ "native", "wasm" ],
+  },
+)

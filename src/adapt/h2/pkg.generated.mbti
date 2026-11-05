@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/adapt/h2"
+
+import {
+  "moonbitstack/moonhttp/http2",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moontls/tls",
+}
+
+// Values
+pub async fn client(@tcp.Conn, scheme? : String, authority~ : String) -> Conn
+
+pub async fn connect(String, port~ : Int32, tls? : @tls.Client, now? : Int64, authority? : String) -> Conn
+
+// Errors
+
+// Types and methods
+pub struct Conn {
+  sock : @tcp.Conn
+  h2 : @http2.Conn
+  authority : String
+  scheme : String
+  events : Array[@http2.Event]
+  tails : Map[Int32, Array[@spec.Field]]
+  mut dead : Bool
+}
+pub async fn Conn::close(Self) -> Unit
+pub fn Conn::is_ready(Self) -> Bool
+pub fn Conn::kind(Self) -> String
+pub async fn Conn::open(Self, @spec.Request) -> @spec.Stream
+pub async fn Conn::read(Self, @spec.Stream) -> Bytes?
+pub async fn Conn::response(Self, @spec.Stream) -> @spec.Response
+pub async fn Conn::send(Self, @spec.Stream, Bytes, end~ : Bool) -> Unit
+pub fn Conn::trailers(Self, @spec.Stream) -> Array[@spec.Field]
+pub impl @spec.Conn for Conn
+
+// Type aliases
+
+// Traits
