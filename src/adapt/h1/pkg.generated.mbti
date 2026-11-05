@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonnet/adapt/h1"
+
+import {
+  "moonbitstack/moonhttp/http1",
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moontls/tls",
+}
+
+// Values
+pub fn client(@tcp.Conn, String) -> Conn
+
+pub async fn connect(String, port~ : Int32, tls? : @tls.Client, now? : Int64) -> Conn
+
+// Errors
+
+// Types and methods
+pub struct Conn {
+  sock : @tcp.Conn
+  authority : String
+  mut held : Bytes
+  mut at : Int32
+  mut next_id : Int32
+  mut stream : Int32
+  mut verb : String
+  mut phase : Phase
+  mut framing : @http1.Body
+  mut left : Int32
+  mut streaming : Bool
+  mut sent_end : Bool
+  mut alive : Bool
+  mut after : Array[@spec.Field]
+}
+pub async fn Conn::close(Self) -> Unit
+pub fn Conn::is_ready(Self) -> Bool
+pub fn Conn::kind(Self) -> String
+pub fn Conn::new(@tcp.Conn, String) -> Self
+pub async fn Conn::open(Self, @spec.Request) -> @spec.Stream
+pub async fn Conn::read(Self, @spec.Stream) -> Bytes?
+pub async fn Conn::response(Self, @spec.Stream) -> @spec.Response
+pub async fn Conn::send(Self, @spec.Stream, Bytes, end~ : Bool) -> Unit
+pub fn Conn::trailers(Self, @spec.Stream) -> Array[@spec.Field]
+pub impl @spec.Conn for Conn
+
+pub enum Phase {
+  Idle
+  Reading
+  Body
+  Finished
+}
+
+// Type aliases
+
+// Traits

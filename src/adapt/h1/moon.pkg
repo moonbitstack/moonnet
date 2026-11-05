@@ -1,0 +1,31 @@
+// HTTP/1.1 over a connection: the framing of RFC 9112 on top of moonnet's tcp
+// connection, presented as the one contract in `spec`.
+//
+// Sockets exist on the native and wasm backends only.
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonhttp/http1",
+  "moonbitstack/moontls/tls",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/cmp",
+}
+
+import {
+  "moonbitstack/moonnet/spec",
+  "moonbitstack/moonnet/tcp",
+  "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
+
+// On js and wasm-gc every file here is filtered out, so each import looks unused.
+
+warnings = "-29"
+
+options(
+  targets: {
+    "h1.mbt": [ "native", "wasm" ],
+    "h1_test.mbt": [ "native", "wasm" ],
+  },
+)
