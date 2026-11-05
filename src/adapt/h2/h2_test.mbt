@@ -75,7 +75,7 @@ async fn answer_with(
     while reading {
       let next = Ok(h2.next()) catch { _ => Err(()) }
       match next {
-        Ok(@http2.Event::Request(stream~, fields~)) => {
+        Ok(@http2.Event::Request(fields~, ..)) =>
           seen.push(
             fields
             .map(h => {
@@ -84,6 +84,9 @@ async fn answer_with(
             })
             .join("|"),
           )
+        // The reply waits for the request to end, as a server that reads the body before
+        // answering does: a head that never ends its stream reads as a body still coming.
+        Ok(@http2.Event::End(stream~)) => {
           h2.headers(
             stream,
             [@header.Header::of(":status", status.to_string())],
