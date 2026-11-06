@@ -64,6 +64,10 @@ async test "pool: a peer that closed while idle is not handed out" {
       // The server is closing; the peek in `get` is what notices.
       @async.sleep(20)
       let again = pool.get(key)
+      // One exchange first: the server counts a connection in its handler, which may not have
+      // run yet when the client side of the connect returns.
+      again.write("b\n")
+      assert_eq(again.read_until("\n"), Some("bye"))
       assert_eq(opened.val, 2)
       assert_eq(pool.total(), 1)
       again.close()
