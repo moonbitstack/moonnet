@@ -1,6 +1,6 @@
 name = "moonbitstack/moonnet"
 
-version = "0.1.10"
+version = "0.1.11"
 
 readme = "README.md"
 
@@ -48,11 +48,11 @@ keywords = [
 description = "Networking for MoonBit: connections, listeners and dialers over TCP, TLS and QUIC."
 
 import {
-  "moonbitstack/moontls@0.9.14",
-  "moonbitstack/mooncred@0.6.9",
-  "moonbitstack/mooncrypt@0.4.11",
-  "moonbitstack/moonhttp@0.15.8",
-  "moonbitstack/moonquic@0.3.11",
+  "moonbitstack/moontls@0.9.15",
+  "moonbitstack/mooncred@0.6.10",
+  "moonbitstack/mooncrypt@0.4.12",
+  "moonbitstack/moonhttp@0.15.9",
+  "moonbitstack/moonquic@0.3.12",
   "moonbitstack/moonbase@0.4.3",
   "moonbitstack/moonurl@0.2.5",
   "moonbitlang/async@0.22.5",
