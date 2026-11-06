@@ -210,6 +210,8 @@ fn Conn::frames(
   while off < held.length() {
     let parsed = @http3.decode(held[off:]) catch {
       @http3.Refused::Malformed(why) => raise @spec.Refused::Malformed(why)
+      @http3.Refused::Fault(detail~, ..) =>
+        raise @spec.Refused::Malformed(detail)
     }
     guard parsed is Some((frame, used)) else { break }
     frames.push(frame)
