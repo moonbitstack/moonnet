@@ -78,13 +78,6 @@ pub let defaults : Config = {
 }
 
 ///|
-/// A connection in the pool and the moment it stops being worth reusing.
-pub struct Idle {
-  conn : @tcp.Conn
-  until : Int64
-}
-
-///|
 /// What a pool will not do.
 #derive(Eq, Debug)
 pub(all) suberror Refused {
@@ -103,11 +96,36 @@ pub extend Refused with Eq::{equal, not_equal}
 pub extend Refused with Debug::{to_repr}
 
 ///|
-/// The connections kept for another exchange. A caller takes one with `get` and gives it
-/// back with `put`, or closes it and takes another next time; a connection that is not given
-/// back is not counted as idle and stays against `max_total`.
+/// A socket and the connection that presents it as the contract. The two stay bound for as
+/// long as both live: a protocol's connection carries state a fresh one over the same socket
+/// would not have — HTTP/2 sends its preface once, and a WebSocket session is one upgrade
+/// and then messages.
+pub struct Opened {
+  raw : @tcp.Conn
+  conn : &@spec.Conn
+}
+
+///|
+/// A pair for a socket the caller has just dialled, with `conn` the adapter over it.
+pub fn Opened::new(raw : @tcp.Conn, conn : &@spec.Conn) -> Opened {
+  { raw, conn, }
+}
+
+///|
+/// A connection kept in the pool, and the moment it stops being worth reusing.
+struct Idle {
+  raw : @tcp.Conn
+  conn : &@spec.Conn
+  until : Int64
+}
+
+///|
+/// The connections kept for another exchange, handed out as the contract. A caller takes one
+/// with `get` and gives it back by closing it; a connection that is never closed is not
+/// counted as idle and stays against `max_total`.
 pub struct Pool {
-  dial : async (Key) -> @tcp.Conn
+  // What the pool opens for a key it has nothing idle for.
+  open : async (Key) -> Opened
   config : Config
   // Idle connections by key, the most recently used last.
   mut idle : Map[String, Array[Idle]]
@@ -118,13 +136,13 @@ pub struct Pool {
 }
 
 ///|
-/// A pool that opens a connection with `dial` when it has none to hand out.
+/// A pool that opens a connection with `open` when it has none to hand out.
 pub fn Pool::new(
-  dial : async (Key) -> @tcp.Conn,
+  open : async (Key) -> Opened,
   config~ : Config = defaults,
 ) -> Pool {
   {
-    dial,
+    open,
     config,
     idle: Map([]),
     total: 0,
@@ -146,8 +164,10 @@ fn now() -> Int64 {
 
 ///|
 /// Take a connection for `key`: one that is idle, unexpired and still open, or a new one.
-/// Raises `Busy` when the pool is full and nothing came free within `wait`.
-pub async fn Pool::get(self : Pool, key : Key) -> @tcp.Conn raise Refused {
+/// What comes back is the contract, and closing it is what returns it to the pool rather
+/// than shutting the socket. Raises `Busy` when the pool is full and nothing came free
+/// within `wait`.
+pub async fn Pool::get(self : Pool, key : Key) -> Handout raise Refused {
   let text = key.text()
   while true {
     if self.closed {
@@ -155,32 +175,32 @@ pub async fn Pool::get(self : Pool, key : Key) -> @tcp.Conn raise Refused {
     }
     if self.take_idle(text) is Some(entry) {
       if entry.until < now() {
-        entry.conn.close()
+        entry.raw.close()
         self.total -= 1
         continue
       }
       if self.config.liveness is Liveness::Peek {
-        // The check may read what the peer sent; the read is kept, so the next exchange
-        // starts from those octets rather than after them.
-        let alive = entry.conn.is_alive(wait=1) catch { _ => false }
+        // The check may read what the peer sent; the read is kept on the socket, so the
+        // exchange that follows starts from those octets rather than after them.
+        let alive = entry.raw.is_alive(wait=1) catch { _ => false }
         if !alive {
-          entry.conn.close()
+          entry.raw.close()
           self.total -= 1
           continue
         }
       }
-      return entry.conn
+      return Handout::new(self, key, entry.raw, entry.conn)
     }
     if self.total < self.config.max_total {
       self.total += 1
-      let opened = (self.dial)(key) catch {
+      let opened = (self.open)(key) catch {
         e => {
           self.total -= 1
           self.changed.broadcast()
           raise Failed("\{e}")
         }
       }
-      return opened
+      return Handout::new(self, key, opened.raw, opened.conn)
     }
     let woke = @async.with_timeout_opt(self.config.wait, () => {
       self.changed.wait()
@@ -195,12 +215,145 @@ pub async fn Pool::get(self : Pool, key : Key) -> @tcp.Conn raise Refused {
 }
 
 ///|
-/// Put a connection back for the next exchange. A pool that is closed, or that already keeps
+/// Where a handed-out connection stands. A connection is reused only from `InUse`; an
+/// exchange that failed, or one that was cut short, leaves it `Broken` and the socket is
+/// shut rather than handed on.
+enum Standing {
+  InUse
+  Broken
+  Returned
+}
+
+///|
+/// A connection handed out by a pool: the contract's eight methods, and a `close` that puts
+/// the connection back for the next caller instead of shutting the socket.
+pub struct Handout {
+  pool : Pool
+  key : Key
+  raw : @tcp.Conn
+  conn : &@spec.Conn
+  mut standing : Standing
+}
+
+///|
+fn Handout::new(
+  pool : Pool,
+  key : Key,
+  raw : @tcp.Conn,
+  conn : &@spec.Conn,
+) -> Handout {
+  { pool, key, raw, conn, standing: InUse, }
+}
+
+///|
+/// The connection this was handed out with, or a refusal if it has already gone back.
+fn Handout::live(self : Handout) -> &@spec.Conn raise @spec.Refused {
+  guard self.standing is InUse else { raise @spec.Refused::Closed }
+  self.conn
+}
+
+///|
+/// A failure anywhere in an exchange leaves the connection in a state only the peer knows:
+/// the octets of a half-read body are still on the socket, so it is dropped rather than
+/// handed to the next caller.
+pub impl @spec.Conn for Handout with fn open(self, request) {
+  let conn = self.live()
+  errdefer {
+    self.standing = Broken
+  }
+  conn.open(request)
+}
+
+///|
+pub impl @spec.Conn for Handout with fn send(self, stream, bytes, end~) {
+  let conn = self.live()
+  errdefer {
+    self.standing = Broken
+  }
+  conn.send(stream, bytes, end~)
+}
+
+///|
+pub impl @spec.Conn for Handout with fn response(self, stream) {
+  let conn = self.live()
+  errdefer {
+    self.standing = Broken
+  }
+  conn.response(stream)
+}
+
+///|
+pub impl @spec.Conn for Handout with fn read(self, stream) {
+  let conn = self.live()
+  errdefer {
+    self.standing = Broken
+  }
+  conn.read(stream)
+}
+
+///|
+pub impl @spec.Conn for Handout with fn trailers(self, stream) {
+  let conn = self.live() catch { _ => return [] }
+  conn.trailers(stream)
+}
+
+///|
+pub impl @spec.Conn for Handout with fn is_ready(self) {
+  guard self.standing is InUse else { return false }
+  self.conn.is_ready()
+}
+
+///|
+pub impl @spec.Conn for Handout with fn kind(self) {
+  self.conn.kind()
+}
+
+///|
+/// The end of the loan: a connection that served its exchange goes back to the pool, and one
+/// whose exchange failed, or that cannot take another, is shut. Closing twice does nothing
+/// the second time.
+pub impl @spec.Conn for Handout with fn close(self) {
+  match self.standing {
+    Returned => ()
+    Broken | InUse => {
+      let reusable = self.standing is InUse && self.conn.is_ready()
+      self.standing = Returned
+      if reusable {
+        self.pool.recycle(self.key, self.raw, self.conn)
+      } else {
+        self.conn.close() catch {
+          _ => ()
+        }
+        self.pool.discard()
+      }
+    }
+  }
+}
+
+///|
+pub extend Handout with @spec.Conn::{
+  open,
+  send,
+  response,
+  read,
+  trailers,
+  is_ready,
+  kind,
+  close,
+}
+
+///|
+/// Keep a connection for the next caller. A pool that is closed, or that already keeps
 /// `max_idle` for this key, closes it instead; either way it stops counting against
 /// `max_total`.
-pub fn Pool::put(self : Pool, key : Key, conn : @tcp.Conn) -> Unit {
+fn Pool::recycle(
+  self : Pool,
+  key : Key,
+  raw : @tcp.Conn,
+  conn : &@spec.Conn,
+) -> Unit {
   if self.closed {
-    conn.close()
+    raw.close()
     self.total -= 1
     self.changed.broadcast()
     return
@@ -214,12 +367,20 @@ pub fn Pool::put(self : Pool, key : Key, conn : @tcp.Conn) -> Unit {
       fresh
     }
   }
-  kept.push({ conn, until: now() + self.config.idle.to_int64(), })
+  kept.push({ raw, conn, until: now() + self.config.idle.to_int64(), })
   while kept.length() > self.config.max_idle {
     let oldest = kept.remove(0)
-    oldest.conn.close()
+    oldest.raw.close()
     self.total -= 1
   }
+  self.changed.broadcast()
+}
+
+///|
+/// Let go of a connection the pool will not keep: it has been shut, and the slot it held
+/// goes to whoever is waiting.
+fn Pool::discard(self : Pool) -> Unit {
+  self.total -= 1
   self.changed.broadcast()
 }
 
@@ -252,15 +413,16 @@ pub fn Pool::total(self : Pool) -> Int32 {
 }
 
 ///|
-/// Close every idle connection and refuse further use.
+/// Close every idle connection and refuse further use. A connection out on loan is closed
+/// when its holder gives it back.
 pub fn Pool::close(self : Pool) -> Unit {
   self.closed = true
   for _, kept in self.idle {
     for entry in kept {
-      entry.conn.close()
+      entry.raw.close()
+      self.total -= 1
     }
   }
   self.idle = Map([])
-  self.total = 0
   self.changed.broadcast()
 }

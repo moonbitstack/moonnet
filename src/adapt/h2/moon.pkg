@@ -14,6 +14,7 @@ import {
 
 import {
   "moonbitstack/moonnet/adapt/h2",
+  "moonbitstack/moonnet/pool",
   "moonbitstack/moonnet/spec",
   "moonbitstack/moonnet/tcp",
   "moonbitstack/moonhttp/header",

@@ -307,3 +307,40 @@ async test "ws: a message that is not valid UTF-8 closes with 1007" {
     conn.close()
   })
 }
+
+///|
+/// A WebSocket session from the pool carries its messages, and the pool drops it on the way
+/// back: a session's one exchange is the upgrade, so there is nothing to hand on.
+async test "ws: a session from the pool carries its message and is not handed out again" {
+  let pongs : Array[Bool] = []
+  let opened : Ref[Int32] = Ref(0)
+  with_ws(
+    conn => {
+      opened.val = opened.val + 1
+      echo_server(conn, pongs)
+    },
+    port => {
+      let pool = @pool.Pool::new(key => {
+        let sock = @tcp.dial(key.host, port=key.port)
+        @pool.Opened::new(sock, @ws.client(sock, host="127.0.0.1:\{port}"))
+      })
+      let key = @pool.Key::new("127.0.0.1", port, alpn="http/1.1")
+      let session = pool.get(key)
+      assert_eq(session.kind(), "ws")
+      let stream = session.open(@spec.Request::new("GET", "/chat"))
+      assert_eq(session.response(stream).status, 101)
+      session.send(stream, @utf8.encode("hello"), end=false)
+      assert_eq(session.read(stream), Some(@utf8.encode("hello")))
+      session.close()
+      assert_eq(pool.idle(key), 0)
+      assert_eq(pool.total(), 0)
+      // A second caller is not given the finished session: it gets one of its own.
+      let next = pool.get(key)
+      let stream = next.open(@spec.Request::new("GET", "/chat"))
+      assert_eq(next.response(stream).status, 101)
+      assert_eq(opened.val, 2)
+      next.close()
+      pool.close()
+    },
+  )
+}

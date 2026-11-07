@@ -13,6 +13,7 @@ import {
 }
 
 import {
+  "moonbitstack/moonnet/pool",
   "moonbitstack/moonnet/spec",
   "moonbitstack/moonnet/tcp",
   "moonbitlang/async",

@@ -4,6 +4,7 @@ package "moonbitstack/moonnet/pool"
 import {
   "moonbitlang/async/cond_var",
   "moonbitlang/core/debug",
+  "moonbitstack/moonnet/spec",
   "moonbitstack/moonnet/tcp",
 }
 
@@ -34,10 +35,24 @@ pub fn Config::equal(Self, Self) -> Bool
 pub fn Config::not_equal(Self, Self) -> Bool
 pub fn Config::to_repr(Self) -> @debug.Repr
 
-pub struct Idle {
-  conn : @tcp.Conn
-  until : Int64
+pub struct Handout {
+  pool : Pool
+  key : Key
+  raw : @tcp.Conn
+  conn : &@spec.Conn
+  mut standing : Standing
 }
+pub async fn Handout::close(Self) -> Unit
+pub fn Handout::is_ready(Self) -> Bool
+pub fn Handout::kind(Self) -> String
+pub async fn Handout::open(Self, @spec.Request) -> @spec.Stream
+pub async fn Handout::read(Self, @spec.Stream) -> Bytes?
+pub async fn Handout::response(Self, @spec.Stream) -> @spec.Response
+pub async fn Handout::send(Self, @spec.Stream, Bytes, end~ : Bool) -> Unit
+pub fn Handout::trailers(Self, @spec.Stream) -> Array[@spec.Field]
+pub impl @spec.Conn for Handout
+
+type Idle
 
 #derive(Eq, @debug.Debug)
 pub(all) struct Key {
@@ -59,8 +74,14 @@ pub fn Liveness::equal(Self, Self) -> Bool
 pub fn Liveness::not_equal(Self, Self) -> Bool
 pub fn Liveness::to_repr(Self) -> @debug.Repr
 
+pub struct Opened {
+  raw : @tcp.Conn
+  conn : &@spec.Conn
+}
+pub fn Opened::new(@tcp.Conn, &@spec.Conn) -> Self
+
 pub struct Pool {
-  dial : async (Key) -> @tcp.Conn
+  open : async (Key) -> Opened
   config : Config
   mut idle : Map[String, Array[Idle]]
   mut total : Int32
@@ -68,11 +89,12 @@ pub struct Pool {
   mut closed : Bool
 }
 pub fn Pool::close(Self) -> Unit
-pub async fn Pool::get(Self, Key) -> @tcp.Conn raise Refused
+pub async fn Pool::get(Self, Key) -> Handout raise Refused
 pub fn Pool::idle(Self, Key) -> Int32
-pub fn Pool::new(async (Key) -> @tcp.Conn, config? : Config) -> Self
-pub fn Pool::put(Self, Key, @tcp.Conn) -> Unit
+pub fn Pool::new(async (Key) -> Opened, config? : Config) -> Self
 pub fn Pool::total(Self) -> Int32
+
+type Standing
 
 // Type aliases
 

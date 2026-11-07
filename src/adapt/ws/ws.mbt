@@ -452,8 +452,10 @@ pub impl @spec.Conn for Conn with fn trailers(self, at) {
 }
 
 ///|
+/// A session's one exchange is the upgrade, so this is true only before it: a pool that
+/// asked after the upgrade would otherwise hand on a session that cannot be opened again.
 pub impl @spec.Conn for Conn with fn is_ready(self) {
-  !self.opened || !self.closed
+  !self.opened && !self.closed
 }
 
 ///|

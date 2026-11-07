@@ -277,3 +277,42 @@ async test "h1: the Host field is the authority, once" {
   assert_true(head.contains("host: example.test:8080"))
   assert_false(head.contains("elsewhere.test"))
 }
+
+///|
+/// A connection the pool hands out is the contract, and closing it is what puts it back: the
+/// second exchange here runs on the connection the first one used, which the server counts.
+async test "h1: a connection from the pool carries an exchange, and closing returns it" {
+  let answer = "HTTP/1.1 200 OK\r\ncontent-length: 5\r\n\r\nhello"
+  let opened : Ref[Int32] = Ref(0)
+  with_server(
+    conn => {
+      opened.val = opened.val + 1
+      while conn.read_until("\r\n\r\n") is Some(_) {
+        conn.write(answer)
+      }
+    },
+    port => {
+      let pool = @pool.Pool::new(key => {
+        let sock = @tcp.dial(key.host, port=key.port)
+        @pool.Opened::new(sock, @h1.client(sock, "127.0.0.1:\{port}"))
+      })
+      let key = @pool.Key::new("127.0.0.1", port, alpn="http/1.1")
+      let first = pool.get(key)
+      assert_eq(first.kind(), "http/1.1")
+      let (response, body) = @spec.call(
+        first,
+        @spec.Request::new("GET", "/one"),
+      )
+      assert_eq((response.status, body), (200, b"hello"))
+      first.close()
+      assert_eq(pool.idle(key), 1)
+      let again = pool.get(key)
+      let (second, more) = @spec.call(again, @spec.Request::new("GET", "/two"))
+      assert_eq((second.status, more), (200, b"hello"))
+      again.close()
+      assert_eq(opened.val, 1)
+      assert_eq(pool.total(), 1)
+      pool.close()
+    },
+  )
+}

@@ -1,8 +1,10 @@
 // The connections kept for another exchange, grouped by what makes two connections
-// interchangeable: the host, the port and the protocol ALPN settled on.
+// interchangeable: the host, the port and the protocol ALPN settled on. What it hands out
+// is the contract, so a caller above it names no protocol.
 //
 // Sockets exist on the native and wasm backends only.
 import {
+  "moonbitstack/moonnet/spec",
   "moonbitstack/moonnet/tcp",
   "moonbitlang/async",
   "moonbitlang/async/cond_var",
@@ -11,8 +13,10 @@ import {
 
 import {
   "moonbitstack/moonnet/pool",
+  "moonbitstack/moonnet/spec",
   "moonbitstack/moonnet/tcp",
   "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8",
 } for "test"
 
 // On js and wasm-gc every file here is filtered out, so each import looks unused.

@@ -292,3 +292,42 @@ async test "h2: a reply with no body ends with its head" {
     conn.close()
   })
 }
+
+///|
+/// The same two exchanges as the h1 test, on a connection the pool hands out: HTTP/2 carries
+/// them one after the other on the one connection, which the server counts.
+async test "h2: a connection from the pool carries its exchanges" {
+  let opened : Ref[Int32] = Ref(0)
+  with_h2(
+    conn => {
+      opened.val = opened.val + 1
+      answer_with(conn, body=b"hello over h2")
+    },
+    port => {
+      let pool = @pool.Pool::new(key => {
+        let sock = @tcp.dial(key.host, port=key.port)
+        @pool.Opened::new(
+          sock,
+          @h2.client(sock, scheme="http", authority="127.0.0.1:\{port}"),
+        )
+      })
+      let key = @pool.Key::new("127.0.0.1", port, alpn="h2")
+      let first = pool.get(key)
+      assert_eq(first.kind(), "h2")
+      let (response, body) = @spec.call(
+        first,
+        @spec.Request::new("GET", "/one"),
+      )
+      assert_eq((response.status, body), (200, b"hello over h2"))
+      first.close()
+      assert_eq(pool.idle(key), 1)
+      let again = pool.get(key)
+      let (second, more) = @spec.call(again, @spec.Request::new("GET", "/two"))
+      assert_eq((second.status, more), (200, b"hello over h2"))
+      again.close()
+      assert_eq(opened.val, 1)
+      assert_eq(pool.total(), 1)
+      pool.close()
+    },
+  )
+}
