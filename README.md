@@ -9,11 +9,13 @@ The wire formats are pure state machines — bytes in, events out — and touch 
 what puts them on one: TCP and UDP, TLS over TCP, QUIC over UDP, and an adapter for each
 protocol that turns it into the same `open` / `send` / `response` / `read`.
 
-```moonbit
+```moonbit native
 // One request, whichever of the four carries it.
-let conn = @h2.connect("example.com", port=443, tls=@tls.Client::new(@roots.mozilla(), alpn=["h2"]))
+let client = @tls.Client::new(@roots.mozilla(), alpn=["h2"])
+let conn = @h2.connect("example.com", port=443, tls=client)
 let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/"))
 println("\{response.status} \{body.length()}")
+conn.close()
 ```
 
 ## Install
@@ -36,7 +38,8 @@ protocol:
 | `Stream` | one exchange, numbered by the connection rather than by the protocol under it |
 | `Refused` | `Malformed`, `Unsupported`, `Closed`, `Broken` |
 
-```moonbit nocheck
+<!-- nocheck -->
+```moonbit native
 pub(open) trait Conn {
   async fn open(self : Self, request : Request) -> Stream
   async fn send(self : Self, stream : Stream, bytes : Bytes, end~ : Bool) -> Unit
@@ -53,18 +56,19 @@ The trait is open: a new protocol is an implementation of it, and nothing above 
 `call` and `read_to_end` are the two helpers over it, for the common shape of "send this,
 read all of that".
 
-```moonbit
-async fn get(conn : &@spec.Conn, path : String) -> String {
+```moonbit native
+async fn fetch(conn : &@spec.Conn, path : String) -> Bytes {
   let stream = conn.open(@spec.Request::new("GET", path))
   let response = conn.response(stream)
-  let body = @spec.read_to_end(conn, stream)
-  "\{response.status} \{body.length()}"
+  assert_eq(response.status, 200)
+  @spec.read_to_end(conn, stream)
 }
 ```
 
-The same `get` runs on every adapter below. `is_ready` is what a connection that carries one
-exchange at a time says about itself: HTTP/1.1 is False while one is in flight, HTTP/2, HTTP/3
-and a WebSocket session are True.
+The same `fetch` runs on every adapter below and on every connection a pool hands out.
+`is_ready` is what a connection says about starting another exchange on it: HTTP/1.1 is False
+while one is in flight, HTTP/2 and HTTP/3 are True, and a WebSocket session is False once its
+upgrade has gone out, since the upgrade is its one exchange.
 
 ## Adapters
 
@@ -96,35 +100,56 @@ ping is answered on the way without reaching the caller. `send` writes a binary 
 since the contract's octets do not say whether they are text; `send_text` is the one that
 writes text, and `close_code` / `close_reason` report how a session ended.
 
-```moonbit
-// A session, and the close the peer gave.
-let ws = @ws.connect("wss://example.com/chat", tls=client)
-let stream = ws.open(@spec.Request::new("GET", "/chat"))
-let _ = ws.response(stream)
-ws.send_text("hello")
-match ws.next() {
-  Some(@frame.Message::Text(reply)) => println(reply)
-  Some(@frame.Message::Close(status~, ..)) => println("closed \{status}")
-  _ => ()
+```moonbit native
+// A session, and the reply to what the client said.
+async fn hello(url : String, tls : @tls.Client) -> Unit {
+  let ws = @ws.connect(url, tls=tls)
+  let stream = ws.open(@spec.Request::new("GET", "/chat"))
+  let _ = ws.response(stream)
+  ws.send(stream, @utf8.encode("hello"), end=false)
+  match ws.read(stream) {
+    Some(reply) => println(@utf8.decode_lossy(reply[:]))
+    None => println("no reply")
+  }
+  ws.close()
 }
 ```
 
 ## The pool
 
-Connections are kept by what makes two of them interchangeable: the host, the port, and the
-protocol ALPN settled on. Every knob is a field of a record with a published preset, so a
-caller changes one without guessing at the rest.
+A pool hands out the contract, not the socket. What `get` returns answers the same eight
+methods as an adapter, so the code above it names no protocol, and a connection is kept only
+for what it was opened for: the key is the host, the port and the ALPN the connection settled
+on.
 
-```moonbit
-let pool = @pool.Pool::new(
-  key => @tcp.dial(key.host, port=key.port, tls=tls_for(key)),
-  config={ ..@pool.defaults, idle: 60000, max_total: 128 },
-)
-let key = @pool.Key::new("example.com", 443, alpn="h2")
-let conn = pool.get(key)
-// ... one connection's worth of work ...
-pool.put(key, conn)
+Closing is what returns a connection. A connection whose exchange failed, that cannot take
+another one, or that sat idle past its time is shut instead, and the slot goes to whoever is
+waiting.
+
+```moonbit native
+async fn pooled(tls : @tls.Client) -> Unit {
+  let pool = @pool.Pool::new(
+    key => {
+      let sock = @tcp.dial(key.host, port=key.port, tls=tls)
+      @pool.Opened::new(sock, @h2.client(sock, scheme="https", authority=key.host))
+    },
+    config={ ..@pool.defaults, idle: 60000, max_total: 128 },
+  )
+  let key = @pool.Key::new("example.com", 443, alpn="h2")
+  assert_eq(key.alpn, "h2")
+  // The same `fetch` the adapters answer, on a connection the pool chose.
+  let conn = pool.get(key)
+  let body = fetch(conn, "/")
+  println(body.length())
+  conn.close()
+  pool.close()
+}
 ```
+
+`Opened` is the pair a pool keeps: the socket, and the adapter over it. The two stay together
+for as long as both live, because a protocol's connection carries state a fresh one over the
+same socket would not have — HTTP/2 sends its preface once, and a WebSocket session is one
+upgrade and then messages.
 
 | Field | Preset | What it is |
 |:--|:--:|:--|
@@ -143,14 +168,24 @@ opening past `max_total`.
 
 `moonnet/udp` is the datagram socket and the client end of a QUIC connection on it.
 
-```moonbit
-let socket = @udp.bind(port=12000)
-socket.send(to, datagram)
-let next = socket.recv(timeout=100)
+```moonbit native
+async fn datagrams() -> Unit {
+  let socket = @udp.bind(port=12000)
+  let to = socket.addr()
+  socket.send(to, b"ping")
+  match socket.recv(timeout=100) {
+    Some((bytes, _)) => println("\{bytes.length()} octets")
+    None => println("nothing came back")
+  }
+  socket.close()
+}
 
-let quic = @udp.dial("example.com", port=443, tls=client)
-let stream = quic.open_bi()
-quic.write(stream, b"hello", fin=true)
+async fn quic_session(tls : @tls.Client) -> Unit {
+  let quic = @udp.dial("example.com", port=443, tls=tls)
+  let stream = quic.open_bi()
+  quic.write(stream, b"hello", fin=true)
+  quic.close()
+}
 ```
 
 `Quic::step` is one turn of the connection — send what is queued, take one datagram in — and
@@ -172,8 +207,8 @@ and accept loop, the dialler, and one port that serves TLS and the clear.
 | `is_alive(wait~)` | whether the peer is still there, asked without waiting |
 | `shutdown()`, `close()` | a close_notify, then the socket |
 
-```moonbit
-@tcp.serve((conn, peer) => {
+```moonbit native
+@tcp.serve((conn, _) => {
   while conn.read_until("\n") is Some(line) {
     conn.write(line + "\n")
   }

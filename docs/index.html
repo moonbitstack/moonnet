@@ -200,7 +200,7 @@ println(get(h1, "/status"))</code></pre>
         <div class="section__no">03</div>
         <div>
           <h2>Connections kept, not reopened</h2>
-          <p class="lead">A pool keyed by what makes two connections interchangeable: the host, the port, and the protocol ALPN settled on. A connection opened for <code>h2</code> is never handed out as a clear HTTP/1.1 one.</p>
+          <p class="lead">A pool keyed by what makes two connections interchangeable: the host, the port, and the protocol ALPN settled on. What it hands out is the contract, so the same call that ran on an adapter runs here, and closing the connection is what puts it back.</p>
         </div>
       </div>
       <div class="two">
@@ -208,13 +208,16 @@ println(get(h1, "/status"))</code></pre>
           <div class="codeblock">
             <div class="codeblock__bar"><span>pool.mbt</span><button class="copy" type="button">copy</button></div>
 <pre><code>let pool = @pool.Pool::new(
-  key =&gt; @tcp.dial(key.host, port=key.port, tls=tls_for(key)),
+  key =&gt; {
+    let sock = @tcp.dial(key.host, port=key.port, tls=tls)
+    @pool.Opened::new(sock, @h2.client(sock, scheme="https", authority=key.host))
+  },
   config={ ..@pool.defaults, idle: 60000 },
 )
 let key = @pool.Key::new("example.com", 443, alpn="h2")
 let conn = pool.get(key)
-// ... one connection's worth of work ...
-pool.put(key, conn)</code></pre>
+let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/"))
+conn.close()</code></pre>
           </div>
         </div>
         <div>

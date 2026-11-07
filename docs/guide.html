@@ -229,17 +229,31 @@ hello</div>
 
     <h2 id="pool">The pool</h2>
     <p>A connection is reused only for what it was opened for, so the key is the host, the port and the protocol ALPN settled on. Every knob is a field of <code>Config</code> with a published preset, so changing one does not mean guessing the rest.</p>
+    <p>What <code>get</code> hands out is the contract, not the socket: the same eight methods, so the code that sends a request does not know whether an adapter or the pool supplied the connection. Closing it is what puts it back.</p>
     <div class="codeblock">
       <div class="codeblock__bar"><span>pool.mbt</span><button class="copy" type="button">copy</button></div>
 <pre><code>let pool = @pool.Pool::new(
-  key =&gt; @tcp.dial(key.host, port=key.port, tls=tls_for(key)),
+  key =&gt; {
+    let sock = @tcp.dial(key.host, port=key.port)
+    @pool.Opened::new(sock, @h1.client(sock, key.host))
+  },
   config={ ..@pool.defaults, idle: 60000 },
 )
-let key = @pool.Key::new("example.com", 443, alpn="h2")
+let key = @pool.Key::new("127.0.0.1", 12000, alpn="http/1.1")
 let conn = pool.get(key)
-<span class="com">// ... one connection's worth of work ...</span>
-pool.put(key, conn)</code></pre>
+println(conn.kind())
+println(pool.idle(key))
+let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/"))
+println("\{response.status} \{body.length()}")
+conn.close()
+println(pool.idle(key))</code></pre>
+      <div class="out">http/1.1
+0
+200 2
+1</div>
     </div>
+    <p><code>Opened</code> is the pair a pool keeps: the socket, and the adapter over it. Both stay together for as long as the connection lives, because a protocol's connection carries state a fresh adapter over the same socket would not have — HTTP/2 sends its preface once, and a WebSocket session is one upgrade and then messages.</p>
+    <p>A connection whose exchange failed, one that cannot take another, and one that sat idle past <code>idle</code> are shut instead of kept, and the slot goes to whoever is waiting. A connection never closed stays against <code>max_total</code>.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Field</th><th>Preset</th><th>What it decides</th></tr></thead>

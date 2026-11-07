@@ -1,6 +1,6 @@
 ---
 name: moonnet
-description: Put HTTP/1.1, HTTP/2, HTTP/3 or WebSocket on a socket, and keep those connections in a pool. Use when a MoonBit program needs to open a connection, send a request, read a reply, upgrade to WebSocket, or reuse connections instead of dialling again.
+description: Put HTTP/1.1, HTTP/2, HTTP/3 or WebSocket on a socket, and hand those connections out from a pool as one contract. Use when a MoonBit program needs to open a connection, send a request, read a reply, upgrade to WebSocket, or reuse connections instead of dialling again.
 ---
 
 # moonnet
@@ -27,9 +27,9 @@ import {
 Every adapter answers the same eight methods. `@spec.call` sends a request and reads the whole
 reply, which is what most calls want.
 
-```moonbit
-async fn status(url : String, tls : @tls.Client) -> String {
-  let conn = @h2.connect("example.com", port=443, tls=tls)
+```moonbit native
+async fn status(host : String, tls : @tls.Client) -> String {
+  let conn = @h2.connect(host, port=443, tls=tls)
   let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/status"))
   conn.close()
   "\{response.status} \{body.length()}"
@@ -42,7 +42,7 @@ and its exchange is the upgrade.
 
 A body that is not at hand when the head goes out is streamed:
 
-```moonbit
+```moonbit native
 async fn upload(conn : &@spec.Conn, parts : Array[Bytes]) -> @spec.Response {
   let stream = conn.open(
     @spec.Request::new("PUT", "/blob", body=@spec.Body::Streaming),
@@ -58,55 +58,65 @@ async fn upload(conn : &@spec.Conn, parts : Array[Bytes]) -> @spec.Response {
 
 ## Reuse the connection
 
-A pool key is the host, the port and the ALPN the connection settled on, so a connection opened
-for `h2` is never handed back as a clear HTTP/1.1 one. The preset is a record; change one field
-and the rest stay.
+A pool hands out the contract, not the socket: what `get` returns answers the same eight methods,
+so the code that sends the request does not know whether an adapter or the pool supplied it.
+Closing is what returns the connection. A connection whose exchange failed, that cannot take a
+second exchange, or that sat idle too long is shut instead, and the slot goes to the next caller.
 
-```moonbit
-async fn pooled(tls_for : (@pool.Key) -> @tls.Client) -> Unit {
+```moonbit native
+async fn pooled(tls : @tls.Client) -> Unit {
   let pool = @pool.Pool::new(
-    key => @tcp.dial(key.host, port=key.port, tls=tls_for(key)),
+    key => {
+      let sock = @tcp.dial(key.host, port=key.port, tls=tls)
+      @pool.Opened::new(sock, @h2.client(sock, scheme="https", authority=key.host))
+    },
     config={ ..@pool.defaults, max_idle: 4 },
   )
   let key = @pool.Key::new("example.com", 443, alpn="h2")
   let conn = pool.get(key)
-  // ... one connection's worth of work ...
-  pool.put(key, conn)
+  let (response, body) = @spec.call(conn, @spec.Request::new("GET", "/"))
+  println("\{response.status} \{body.length()}")
+  conn.close()
   pool.close()
 }
 ```
 
-`pool.get` raises `@pool.Busy` when the pool is at `max_total` and nothing came free within
-`wait`, and `@pool.Closed` after `pool.close`.
+`Opened` pairs a socket with the adapter over it, and the pool keeps the two together: HTTP/2
+sends its preface once, and a WebSocket session is one upgrade, so a fresh adapter over the same
+socket would not be the same connection. `pool.get` raises `@pool.Busy` when the pool is at
+`max_total` and nothing came free within `wait`, and `@pool.Closed` after `pool.close`.
 
 ## WebSocket
 
-```moonbit
-async fn echo(url : String, tls : @tls.Client) -> Unit {
+```moonbit native
+async fn hello(url : String, tls : @tls.Client) -> Unit {
   let ws = @ws.connect(url, tls=tls)
   let stream = ws.open(@spec.Request::new("GET", "/chat"))
-  let _ = ws.response(stream)
-  ws.send_text("hello")
-  match ws.next() {
-    Some(@frame.Message::Text(reply)) => println(reply)
-    Some(@frame.Message::Close(status~, ..)) => println("closed \{status}")
-    _ => ()
+  println(ws.response(stream).status)
+  ws.send(stream, @utf8.encode("hello"), end=false)
+  match ws.read(stream) {
+    Some(reply) => println(@utf8.decode_lossy(reply[:]))
+    None => println("the session ended")
   }
+  ws.close()
 }
 ```
 
-`send` writes a binary message and `send_text` writes text; a reply arrives as a
-`@frame.Message`, not as octets. A ping from the server is answered for you and never reaches
-`next`.
+`send` writes a binary message and `send_text` writes text. A ping from the server is answered
+for you and never reaches the caller, and `next` gives the messages as frames when the close code
+and reason matter.
 
 ## What catches people out
 
 - One task reads a connection and one task writes it. Two readers or two writers on the same
   handle abort the process in the async runtime; a pool hands a connection to one caller at a
   time for that reason.
+- A connection from a pool belongs to the caller until `close`, and a connection never closed
+  stays against `max_total`. Using one after it went back raises `@spec.Refused::Closed` rather
+  than writing to a socket someone else now holds.
 - HTTP/1.1 carries one exchange at a time, so `is_ready()` is false until the reply has been
-  read to its end. HTTP/2, HTTP/3 and WebSocket return true. Do not open a second exchange on
-  HTTP/1.1 because a check passed on another adapter.
+  read to its end. HTTP/2 and HTTP/3 return true. Do not open a second exchange on HTTP/1.1
+  because a check passed on another adapter.
 - `read` returns `None` at the end of a body; keep calling it until then, or use
   `@spec.read_to_end(conn, stream, limit=...)` so a hostile peer cannot make you hold an
   unbounded body.
