@@ -173,10 +173,15 @@ server_case() { # name want-pattern key server-args... -- s_client-args...
   "$peer" server $port $key.pem $key.key "${sargs[@]}" > "p.$port.log" 2>&1 &
   local pid=$!
   wait_port $port || { report FAIL "$name" "peer did not start: $(head -c 200 p.$port.log)"; kill $pid 2>/dev/null; return; }
-  local out
-  out=$( (for l in ${lines:-ping update pong}; do printf '%s\n' "$l"; sleep 0.5; done; sleep 1) |
-    timeout 20 openssl s_client -connect 127.0.0.1:$port -CAfile root.pem -verify_return_error \
-      $([[ " ${cargs[*]} " == *" -noservername "* ]] || echo -servername localhost) "${cargs[@]}" 2>&1)
+  # The lines go in once s_client reports the handshake over, done or failed: a
+  # private key that takes seconds to sign must not see its echo cut short.
+  local out log=c.$port.log
+  : > "$log"
+  (for _ in $(seq 200); do grep -qE 'Verify return code|error|alert' "$log" && break; sleep 0.1; done
+    for l in ${lines:-ping update pong}; do printf '%s\n' "$l"; sleep 0.5; done; sleep 1) |
+    timeout 40 openssl s_client -connect 127.0.0.1:$port -CAfile root.pem -verify_return_error \
+      $([[ " ${cargs[*]} " == *" -noservername "* ]] || echo -servername localhost) "${cargs[@]}" > "$log" 2>&1
+  out=$(cat "$log")
   kill $pid 2>/dev/null; wait $pid 2>/dev/null
   if [[ "$out" =~ $want ]]; then
     report PASS "$name" "$(grep -m1 -oE 'Ciphersuite: [A-Z0-9_]+|Negotiated TLS1.3 group: [A-Za-z0-9-]+' <<< "$out" | tr '\n' ' ')"
