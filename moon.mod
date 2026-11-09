@@ -52,8 +52,8 @@ description = "Networking for MoonBit: connections, listeners and dialers over T
 
 import {
   "moonbitstack/moontls@0.9.16",
-  "moonbitstack/mooncred@0.6.12",
-  "moonbitstack/mooncrypt@0.4.13",
+  "moonbitstack/mooncred@0.6.13",
+  "moonbitstack/mooncrypt@0.4.14",
   "moonbitstack/moonhttp@0.15.10",
   "moonbitstack/moonquic@0.3.14",
   "moonbitstack/moonbase@0.4.4",
