@@ -30,5 +30,7 @@ options(
   targets: {
     "socket.mbt": [ "native", "wasm" ],
     "quic.mbt": [ "native", "wasm" ],
+    "quic_test.mbt": [ "native", "wasm" ],
+    "fixtures_test.mbt": [ "native", "wasm" ],
   },
 )
