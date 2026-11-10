@@ -18,8 +18,17 @@ pub struct Quic {
 }
 
 ///|
-/// The clock QUIC counts in, milliseconds since the epoch.
+/// The clock a QUIC connection counts in: microseconds since the epoch, which is the unit the
+/// recovery, idle and closing-period timers are measured in (RFC 9002 §6). Reading it in
+/// milliseconds leaves every timer a thousand times too long, so a lost packet is never sent
+/// again.
 pub fn now() -> Int64 {
+  (@env.now() * 1000).reinterpret_as_int64()
+}
+
+///|
+/// The clock a certificate is judged at: seconds since the epoch.
+fn wall() -> Int64 {
   (@env.now() / 1000).reinterpret_as_int64()
 }
 
@@ -62,7 +71,7 @@ pub async fn dial(
     entropy,
     dcid,
     scid,
-    now(),
+    wall(),
   ) catch {
     e => raise QuicRefused::Broken("\{e}")
   }

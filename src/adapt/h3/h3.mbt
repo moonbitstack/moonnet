@@ -21,7 +21,8 @@ pub struct Conn {
   tails : Map[Int32, Array[@spec.Field]]
   ended : Map[Int32, Bool]
   mut dead : Bool
-  // When the peer last said anything, and how long a silence is worth waiting through.
+  // When the peer last said anything, and how long a silence is worth waiting through: the
+  // QUIC connection's clock is in microseconds.
   mut quiet : Int64
   deadline : Int64
 }
@@ -57,7 +58,7 @@ pub async fn connect(
     ended: Map([]),
     dead: false,
     quiet: @udp.now(),
-    deadline: 30000L,
+    deadline: 30_000_000L,
   }
   conn.settings()
   conn
