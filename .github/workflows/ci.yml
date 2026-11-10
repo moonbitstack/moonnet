@@ -149,6 +149,33 @@ jobs:
           moon update
           bash scripts/http_interop.sh
 
+  quic:
+    name: QUIC stream reset against quic-go
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: install
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      # The peer is a Go program; quic-go v0.55 needs 1.24 or later.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: integration/quic-reset-peer/go.sum
+
+      # Three streams, a reset and a stop in each direction, read back off the peer's own wire.
+      - name: stream reset and stop
+        run: |
+          moon update
+          bash scripts/quic_reset.sh
+
   websocket:
     name: WebSocket conformance
     permissions:

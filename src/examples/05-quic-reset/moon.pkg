@@ -1,0 +1,26 @@
+// The child half of a stream reset: the client opens three streams against a peer of another
+// implementation, abandons one, asks it to stop another, and takes the peer's own reset and stop.
+// The script that drives it, scripts/quic_reset.sh, compares what this prints with what the peer
+// prints, so the frames the peer saw are the evidence, not this side's word for it.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/moonnet/udp",
+  "moonbitstack/mooncred/x509",
+  "moonbitstack/moontls/tls",
+  "moonbitstack/moontls/ext",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/core/env",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
+}
+
+warnings = "-29"
+
+options(
+  targets: {
+    "main.mbt": [ "native", "wasm" ],
+    "elsewhere.mbt": [ "js", "wasm-gc" ],
+  },
+)
