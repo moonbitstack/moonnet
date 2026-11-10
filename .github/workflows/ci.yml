@@ -165,7 +165,7 @@ jobs:
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
       # The peer is a Go program; quic-go v0.55 needs 1.24 or later.
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.24'
           cache-dependency-path: integration/quic-reset-peer/go.sum
