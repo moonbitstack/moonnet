@@ -180,8 +180,8 @@ println(get(h1, "/status"))</code></pre>
           <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2 5 14h6l-1 8 9-13h-6l0-7Z"/></svg></span>
           <div class="card__label">RFC 9114</div>
           <h3>HTTP/3</h3>
-          <p>Over QUIC on a datagram socket. Settings on a control stream, the QPACK dynamic table shut, and an exchange per bidirectional stream.</p>
-          <div class="card__meta">quic datagrams <br> qpack static</div>
+          <p>Over QUIC on a datagram socket. Settings on a control stream, the QPACK dynamic table shut, and an exchange per bidirectional stream — one that is given up says so, with its code.</p>
+          <div class="card__meta">quic datagrams <br> qpack static · reset</div>
         </div>
         <div class="card">
           <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9h11l-3-3M20 15H9l3 3"/></svg></span>
@@ -258,7 +258,7 @@ println(opened.target) <span class="com">// /status</span>
 let conn = @h2.client(opened.conn, scheme="https", authority="example.com")
 let (response, body) = @spec.call(conn, @spec.Request::new("GET", opened.target))</code></pre>
       </div>
-      <p>Below the adapters are the two transports themselves: a TCP connection that is plain or TLS 1.3 and implements the async reader and writer, a listener that serves both on one port, and a datagram socket carrying a QUIC connection.</p>
+      <p>Below the adapters are the two transports themselves: a TCP connection that is plain or TLS 1.3 and implements the async reader and writer, a listener that serves both on one port, and a datagram socket carrying a QUIC connection whose streams can be abandoned in either direction, with the code the peer is meant to act on.</p>
     </div>
   </section>
 

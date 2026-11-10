@@ -1,6 +1,6 @@
 ---
 name: moonnet
-description: Put HTTP/1.1, HTTP/2, HTTP/3 or WebSocket on a socket, and hand those connections out from a pool as one contract. Use when a MoonBit program needs to open a connection, send a request, read a reply, upgrade to WebSocket, or reuse connections instead of dialling again.
+description: Put HTTP/1.1, HTTP/2, HTTP/3 or WebSocket on a socket, carry QUIC streams, and hand those connections out from a pool as one contract. Use when a MoonBit program needs to open a connection, send a request, read a reply, upgrade to WebSocket, abandon a stream, or reuse connections instead of dialling again.
 ---
 
 # moonnet
@@ -105,6 +105,52 @@ async fn hello(url : String, tls : @tls.Client) -> Unit {
 `send` writes a binary message and `send_text` writes text. A ping from the server is answered
 for you and never reaches the caller, and `next` gives the messages as frames when the close code
 and reason matter.
+
+## Give a QUIC stream up, or be told to
+
+A stream is abandoned in either direction, and the peer is told why: `reset` sends RESET_STREAM
+with an application code, `stop` sends STOP_SENDING. Both go out as control frames, so they are
+sent again if the packet carrying them is lost.
+
+```moonbit native
+async fn cancel(quic : @udp.Quic) -> Unit raise @udp.QuicRefused {
+  let stream = quic.open_bi()
+  quic.write(stream, @utf8.encode("a request nobody wants"), fin=false)
+  // What is still queued on the stream goes, and the peer is told why.
+  quic.reset(stream, code=0x10c)
+}
+```
+
+The other end learns the same way: `take` raises `Reset(code)` once the octets that did arrive
+have been handed over, `write` raises `Stopped(code)` when the peer has asked this side to stop
+sending, and `refused(stream)` reports either without raising, for code that polls.
+
+```moonbit native
+async fn drain(quic : @udp.Quic, stream : UInt64) -> Int32 {
+  let mut read = 0
+  while true {
+    let more = quic.take(stream) catch {
+      @udp.QuicRefused::Reset(code) => {
+        println("the peer gave up the stream with \{code}")
+        return read
+      }
+      _ => return read
+    }
+    if more.length() == 0 {
+      if quic.ended(stream) {
+        return read
+      }
+    }
+    read += more.length()
+  }
+  read
+}
+```
+
+A STOP_SENDING is answered with a RESET_STREAM carrying the same code (RFC 9000 §3.5), so
+nothing else is owed once `write` has raised `Stopped`. A STOP_SENDING for a stream the peer has
+never seen — one this side opened and stopped before any octet went out — is a
+STREAM_STATE_ERROR at the peer, so ask for a stop on a stream that is in use.
 
 ## What catches people out
 

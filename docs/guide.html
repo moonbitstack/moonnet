@@ -288,6 +288,19 @@ while quic.step(timeout=200) {
 }</code></pre>
     </div>
     <p>Reading is a poll rather than a blocking call because one QUIC connection carries control and QPACK streams beside the exchange's own; a blocking read would hold those back. The same socket is what HTTP/3 is built on.</p>
+    <p>A stream that is not going to be finished is abandoned rather than left hanging, and the code travels with it: <code>reset</code> sends RESET_STREAM with what this side still held, <code>stop</code> sends STOP_SENDING. Both are control frames, so a lost packet carrying one is sent again.</p>
+    <div class="codeblock">
+      <div class="codeblock__bar"><span>abandon.mbt</span><button class="copy" type="button">copy</button></div>
+<pre><code>let stream = quic.open_bi()
+quic.write(stream, @utf8.encode("half a request"), fin=false) catch { _ =&gt; () }
+
+// Nobody wants the reply: what is queued goes, and the peer is told why.
+quic.reset(stream, code=0x10c) catch { _ =&gt; () }
+
+// The other direction: this side will read no more of a stream.
+quic.stop(stream, code=0x10d) catch { _ =&gt; () }</code></pre>
+    </div>
+    <p>The other end learns the same way. <code>take</code> raises <code>Reset(code)</code> once the octets that did arrive have been handed over, <code>write</code> raises <code>Stopped(code)</code> when the peer has asked this side to stop sending, and <code>refused(stream)</code> reports either without raising for code that polls. A STOP_SENDING is answered with a RESET_STREAM carrying the same code — RFC 9000 §3.5 leaves the sender no choice — so the peer that asked sees the stream reset without asking twice.</p>
 
     <h2 id="backends">Backends and errors</h2>
     <p>The sockets are the async runtime's, and they exist on the native and wasm backends. On js and wasm-gc the packages that drive them are empty, so code that only uses the front door still compiles there and a program that opens sockets is native or wasm.</p>
@@ -303,6 +316,7 @@ while quic.step(timeout=200) {
         </tbody>
       </table>
     </div>
+    <p>A QUIC connection has its own, <code>@udp.QuicRefused</code>, because a stream is a thing of its own: <code>Timeout</code> and <code>Broken(String)</code> and <code>Closed</code> for the connection, then <code>Reset(code)</code> and <code>Stopped(code)</code> for a stream the peer ended abruptly. <code>0</code> is NO_ERROR, and any other code is the application's to define.</p>
     <div class="note">
       <p>One task reads a connection and one task writes it. The async runtime aborts the process when two tasks read or two tasks write the same handle at once, so a pool hands a connection to one caller at a time.</p>
     </div>

@@ -180,7 +180,7 @@ async fn datagrams() -> Unit {
   socket.close()
 }
 
-async fn quic_session(tls : @tls.Client) -> Unit {
+async fn quic_session(tls : @tls.Client) -> Unit raise @udp.QuicRefused {
   let quic = @udp.dial("example.com", port=443, tls=tls)
   let stream = quic.open_bi()
   quic.write(stream, b"hello", fin=true)
@@ -191,6 +191,31 @@ async fn quic_session(tls : @tls.Client) -> Unit {
 `Quic::step` is one turn of the connection — send what is queued, take one datagram in — and
 `take`, `ended`, `open_bi` and `open_uni` read what came of it. Reading is a poll rather than a
 blocking call because the same connection also carries control and QPACK streams.
+
+A stream can be given up in either direction, and the other end is told why:
+
+| Declaration | What it does |
+|:--|:--|
+| `reset(stream, code~)` | sends RESET_STREAM with that application code, and drops whatever is still queued on the stream (RFC 9000 §19.4) |
+| `stop(stream, code~)` | sends STOP_SENDING: this side will read no more of it (§19.5) |
+| `refused(stream)` | how the peer ended the stream abruptly, if it did: `Reset(code)` for one this side was reading, `Stopped(code)` for one it was writing |
+| `take(stream)` | raises `Reset(code)` once the octets that did arrive have been handed over |
+| `write(stream, bytes)` | raises `Stopped(code)` once the peer has asked this side to stop sending |
+
+```moonbit native
+async fn abandon(quic : @udp.Quic) -> Unit {
+  let stream = quic.open_bi()
+  quic.write(stream, @utf8.encode("half a request")) catch { _ => () }
+  // The reply is not wanted any more: what is queued goes, and the peer is told why.
+  quic.reset(stream, code=0x10c) catch { _ => () }
+}
+```
+
+A STOP_SENDING is answered with a RESET_STREAM carrying the same code, since §3.5 leaves the
+sender no choice; the peer that asked then sees the stream reset from this side without asking
+for it again. Both are control frames, so they are sent again if the packet carrying them is
+lost.
+
 
 ## TCP
 
@@ -231,6 +256,7 @@ wasm-gc the packages that drive them are empty.
 | `src/examples/02-plug` | a connection implemented outside this library, run through the same helpers |
 | `src/examples/03-front-door` | the front door on its own: a listener and a client with one import |
 | `src/examples/04-ws-conformance` | the client end of a WebSocket conformance run, for a fuzzing server to drive |
+| `src/examples/05-quic-reset` | three QUIC streams abandoned and refused, for a peer of another implementation to report |
 | `src/examples/tls-peer` | a TLS peer for interop runs against OpenSSL and tlsfuzzer |
 
 ```
@@ -249,12 +275,19 @@ not write, over real sockets:
 | HTTP/3 — QUIC handshake, settings with the QPACK table shut, one stream per exchange | both, where the server offers `h3` | all exchanges answered |
 | WebSocket — the upgrade, framing, ping and pong, close, invalid UTF-8, reserved bits | Autobahn's fuzzing server | 244 graded cases pass, 4 of them non-strict; no failures |
 | TLS 1.3 over TCP — handshake, certificate chain, alerts | OpenSSL, and tlsfuzzer | OpenSSL interop passes; tlsfuzzer runs in CI |
+| QUIC streams — RESET_STREAM and STOP_SENDING, with the final size and the codes | quic-go | both frames arrive at the peer with the codes sent, and the reset a STOP_SENDING owes comes back |
 
 `scripts/http_interop.sh` is the run behind the first four rows: it starts a server of this
 family and one in a container, and asks each of them for HTTP/1.1, HTTP/2 and HTTP/3, plus a
 WebSocket message. `scripts/ws_conformance.sh` is the fifth: it starts Autobahn's fuzzing
 server and plays its cases with this library's client, and the verdict is the server's report.
-Both are jobs in CI, on real sockets, on every push.
+`scripts/quic_reset.sh` is the last: three streams against a quic-go server, checked from both
+ends — what the peer's application reports, and the frames on the peer's own wire. All three are
+jobs in CI, on real sockets, on every push.
+
+The QUIC run offers x25519 alone. With the hybrid key share this client's ClientHello spans two
+Initial datagrams, the peer answers with a ServerHello longer than one, and the handshake does
+not finish against a peer of another implementation; that is where the next round starts.
 
 The WebSocket run leaves out two sections of the suite: 9.\* measures throughput with messages
 from 64 KiB to 16 MiB, and 12.\* and 13.\* exercise permessage-deflate, which this adapter does
