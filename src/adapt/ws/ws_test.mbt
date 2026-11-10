@@ -221,8 +221,19 @@ async test "ws: a ping is answered before any message reaches the caller" {
           None => more = false
           Some((frame, used)) => {
             held = held[used:].to_owned()
-            if frame.opcode is @frame.Opcode::Pong {
-              pongs.val = pongs.val + 1
+            match frame.opcode {
+              @frame.Opcode::Pong => pongs.val = pongs.val + 1
+              // Whatever the client sends next comes after the pong it owed, so answering it
+              // is what tells the test the pong has been counted.
+              @frame.Opcode::Text =>
+                conn.write(
+                  @frame.Frame::{
+                    fin: true,
+                    opcode: @frame.Opcode::Text,
+                    payload: frame.payload,
+                  }.encode(),
+                )
+              _ => ()
             }
           }
         }
@@ -236,9 +247,13 @@ async test "ws: a ping is answered before any message reaches the caller" {
     // The ping is answered on the way to the message behind it, and never reaches the
     // caller: what comes back is the text.
     assert_eq(conn.next(), Some(@frame.Message::Text("after")))
+    // A round trip of this side's own: the reply to it cannot arrive before the server has
+    // read the pong, which is what the count below is about.
+    conn.send_text("still there")
+    assert_eq(conn.next(), Some(@frame.Message::Text("still there")))
+    assert_true(pongs.val >= 1)
     conn.close()
   })
-  assert_true(pongs.val >= 1)
 }
 
 ///|
