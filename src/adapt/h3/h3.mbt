@@ -20,6 +20,8 @@ pub struct Conn {
   heads : Map[Int32, @spec.Response]
   tails : Map[Int32, Array[@spec.Field]]
   ended : Map[Int32, Bool]
+  // Why an exchange ended without its reply, when the server said.
+  why : Map[Int32, String]
   mut dead : Bool
   // When the peer last said anything, and how long a silence is worth waiting through: the
   // QUIC connection's clock is in microseconds.
@@ -56,6 +58,7 @@ pub async fn connect(
     heads: Map([]),
     tails: Map([]),
     ended: Map([]),
+    why: Map([]),
     dead: false,
     quiet: @udp.now(),
     deadline: 30_000_000L,
@@ -77,11 +80,14 @@ fn authority_of(host : String, port : Int32) -> String {
 
 ///|
 /// The control stream of RFC 9114 §6.2.1: this side's settings, with the dynamic table shut
-/// so that no reply can refer to an entry this side does not have.
+/// so that no reply can refer to an entry this side does not have. A connection that cannot
+/// carry its own settings is not one, so it is marked over rather than handed back.
 fn Conn::settings(self : Conn) -> Unit {
   let settings = @http3.Settings::new(0UL, 16384UL, 0UL)
   let stream = self.quic.open_uni()
-  self.quic.write(stream, @http3.control(settings.pairs()), fin=false)
+  self.quic.write(stream, @http3.control(settings.pairs()), fin=false) catch {
+    _ => self.dead = true
+  }
 }
 
 ///|
@@ -105,7 +111,16 @@ async fn Conn::step(self : Conn) -> Unit {
     self.dead = true
   }
   for at, stream in self.streams {
-    let arrived = self.quic.take(stream)
+    let arrived = self.quic.take(stream) catch {
+      @udp.QuicRefused::Reset(code) => {
+        // RFC 9114 §4.1.2: a stream the server abandoned is a reply that will not come, and
+        // the error code says which. The reader of that exchange is the one told.
+        self.why[at] = "the server reset the stream with code \{code}"
+        self.ended[at] = true
+        b""
+      }
+      _ => b""
+    }
     if arrived.length() > 0 {
       let held = self.held.get(at).unwrap_or(b"")
       self.held[at] = if held.length() == 0 { arrived } else { held + arrived }
@@ -161,6 +176,25 @@ fn request_head(
 }
 
 ///|
+/// Octets onto an exchange's stream, with what QUIC refused turned into what the contract
+/// refuses: a stream the server asked this side to stop writing is an exchange that failed,
+/// not a connection that is merely slow.
+fn Conn::put(
+  self : Conn,
+  stream : UInt64,
+  bytes : Bytes,
+  fin~ : Bool,
+) -> Unit raise @spec.Refused {
+  self.quic.write(stream, bytes, fin~) catch {
+    @udp.QuicRefused::Stopped(code) =>
+      raise @spec.Refused::Broken("the peer stopped the exchange, code \{code}")
+    @udp.QuicRefused::Reset(code) =>
+      raise @spec.Refused::Broken("the exchange was reset, code \{code}")
+    _ => raise @spec.Refused::Closed
+  }
+}
+
+///|
 pub impl @spec.Conn for Conn with fn open(self, request) {
   if self.dead {
     raise @spec.Refused::Closed
@@ -172,11 +206,10 @@ pub impl @spec.Conn for Conn with fn open(self, request) {
   let head = request_head(request, self.scheme, self.authority)
   match request.body {
     @spec.Body::Bytes(bytes) =>
-      self.quic.write(stream, @http3.message(head, bytes), fin=true)
-    @spec.Body::Empty =>
-      self.quic.write(stream, @http3.message(head, b""), fin=true)
+      self.put(stream, @http3.message(head, bytes), fin=true)
+    @spec.Body::Empty => self.put(stream, @http3.message(head, b""), fin=true)
     @spec.Body::Streaming =>
-      self.quic.write(stream, @http3.message(head, b""), fin=false)
+      self.put(stream, @http3.message(head, b""), fin=false)
   }
   let opened : @spec.Stream = { id, }
   opened
@@ -188,14 +221,10 @@ pub impl @spec.Conn for Conn with fn send(self, at, bytes, end~) {
     raise @spec.Refused::Unsupported("not the exchange in flight")
   }
   if bytes.length() > 0 {
-    self.quic.write(
-      stream,
-      @http3.Frame::encode(@http3.Frame::Data(bytes)),
-      fin=false,
-    )
+    self.put(stream, @http3.Frame::encode(@http3.Frame::Data(bytes)), fin=false)
   }
   if end {
-    self.quic.write(stream, b"", fin=true)
+    self.put(stream, b"", fin=true)
   }
 }
 
@@ -266,7 +295,10 @@ pub impl @spec.Conn for Conn with fn response(self, at) {
     // The head is looked for before "the stream ended" is believed, since a reply that
     // arrives whole ends the stream in the same flight as its head.
     if self.quic.ended(self.streams.get(at.id).unwrap_or(0UL)) {
-      raise @spec.Refused::Closed
+      match self.why.get(at.id) {
+        Some(reason) => raise @spec.Refused::Broken(reason)
+        None => raise @spec.Refused::Closed
+      }
     }
     self.step()
   }
@@ -320,7 +352,13 @@ pub impl @spec.Conn for Conn with fn read(self, at) {
     if self.ended.get(at.id).unwrap_or(false) {
       let ready = self.body.get(at.id).unwrap_or(b"")
       self.body[at.id] = b""
-      return if ready.length() > 0 { Some(ready) } else { None }
+      if ready.length() > 0 {
+        return Some(ready)
+      }
+      match self.why.get(at.id) {
+        Some(reason) => raise @spec.Refused::Broken(reason)
+        None => return None
+      }
     }
     if self.dead {
       raise @spec.Refused::Closed

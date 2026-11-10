@@ -4,6 +4,7 @@
 // Sockets exist on the native and wasm backends only.
 import {
   "moonbitstack/moonquic/conn",
+  "moonbitstack/moonquic/frame",
   "moonbitstack/moontls/tls",
   "moonbitlang/async",
   "moonbitlang/async/socket",
@@ -13,9 +14,12 @@ import {
 import {
   "moonbitstack/moonnet/udp",
   "moonbitstack/moonquic/conn",
+  "moonbitstack/moonquic/frame",
   "moonbitstack/moontls/tls",
+  "moonbitstack/mooncred/x509",
   "moonbitlang/async",
   "moonbitlang/async/socket",
+  "moonbitlang/core/env",
 } for "test"
 
 // On js and wasm-gc every file here is filtered out, so each import looks unused.
@@ -26,6 +30,5 @@ options(
   targets: {
     "socket.mbt": [ "native", "wasm" ],
     "quic.mbt": [ "native", "wasm" ],
-    "socket_test.mbt": [ "native", "wasm" ],
   },
 )

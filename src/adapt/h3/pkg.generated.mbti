@@ -24,6 +24,7 @@ pub struct Conn {
   heads : Map[Int32, @spec.Response]
   tails : Map[Int32, Array[@spec.Field]]
   ended : Map[Int32, Bool]
+  why : Map[Int32, String]
   mut dead : Bool
   mut quiet : Int64
   deadline : Int64
