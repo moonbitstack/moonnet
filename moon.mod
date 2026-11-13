@@ -55,12 +55,12 @@ keywords = [
 description = "Networking for MoonBit: connections, listeners and dialers over TCP, TLS and QUIC."
 
 import {
-  "moonbitstack/moontls@0.9.16",
-  "moonbitstack/mooncred@0.6.13",
-  "moonbitstack/mooncrypt@0.4.14",
-  "moonbitstack/moonhttp@0.15.10",
+  "moonbitstack/moontls@0.9.17",
+  "moonbitstack/mooncred@0.7.0",
+  "moonbitstack/mooncrypt@0.5.0",
+  "moonbitstack/moonhttp@0.16.0",
   "moonbitstack/moonquic@0.3.14",
-  "moonbitstack/moonbase@0.4.4",
+  "moonbitstack/moonbase@0.5.0",
   "moonbitstack/moonurl@0.2.6",
   "moonbitlang/async@0.22.5",
 }
