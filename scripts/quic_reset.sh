@@ -6,7 +6,9 @@
 #
 #     bash scripts/quic_reset.sh
 #
-# Needs a Go toolchain (1.25 or later) for the peer, which is quic-go.
+# Needs a Go toolchain (1.25 or later) for the first peer and `aioquic==1.3.0` for the second:
+#
+#     python3 -m pip install -r integration/aioquic-reset-peer/requirements.txt
 #
 # The Go peer runs twice, because its Initial packet size decides whether the ServerHello carrying
 # the hybrid key share fits in one datagram or spills into two, and a client that reassembles one
@@ -46,6 +48,11 @@ client="$(binary "$root/_build/native/debug/build/examples/05-quic-reset" 05-qui
 
 (cd "$root/integration/quic-reset-peer" && go build -o "$work/peer-go" .) || exit 1
 
+python3 -c 'import aioquic' 2>/dev/null || {
+  echo "aioquic is not installed: python3 -m pip install -r integration/aioquic-reset-peer/requirements.txt" >&2
+  exit 1
+}
+
 # A certificate for the peer; the client is told to trust it and to skip the chain check, since a
 # peer started by a script cannot be issued one a test root signs.
 openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -days 2 -nodes \
@@ -77,15 +84,24 @@ on_wire() {
   fi
 }
 
-# One run: start the peer, take the port it reports, drive the client through the three cases,
-# then compare what each end says. `size` is the peer's Initial packet size.
+# One run: start `impl`, take the port it reports, drive the client through the three cases, then
+# compare what each end says. `size` is the Go peer's Initial packet size, unused by aioquic, and
+# `resent` is the code the peer's reset of stream 4 carries.
 run() {
-  local tag="$1" size="$2"
+  local impl="$1" tag="$2" size="$3" resent="$4"
   local dir="$work/$tag"
   mkdir -p "$dir"
 
-  QUIC_GO_LOG_LEVEL=debug "$work/peer-go" --cert "$work/cert.pem" --key "$work/key.pem" \
-    --initial "$size" >"$dir/peer.log" 2>&1 &
+  case "$impl" in
+    go)
+      QUIC_GO_LOG_LEVEL=debug "$work/peer-go" --cert "$work/cert.pem" --key "$work/key.pem" \
+        --initial "$size" >"$dir/peer.log" 2>&1 &
+      ;;
+    aioquic)
+      python3 "$root/integration/aioquic-reset-peer/peer.py" \
+        --cert "$work/cert.pem" --key "$work/key.pem" >"$dir/peer.log" 2>&1 &
+      ;;
+  esac
   peer_pid=$!
 
   # The port is the system's choice, so it is read out of the peer's first line rather than
@@ -126,8 +142,9 @@ run() {
   check client "$dir/client.log" "stream 0: reset sent 42"
   check client "$dir/client.log" "stream 4: echo echo:abc"
   check client "$dir/client.log" "stream 4: stop sent 7"
-  # The code the peer answers the stop with, which is the one the script chose for it.
-  check client "$dir/client.log" "stream 4: peer reset 7"
+  # The Go peer answers the stop with a code the script chooses; aioquic has already queued a
+  # reset with NO_ERROR by the time its application hears of the frame, so 0 is its own answer.
+  check client "$dir/client.log" "stream 4: peer reset $resent"
   check client "$dir/client.log" "stream 8: peer stop 55"
   check client "$dir/client.log" "stream 8: write refused 55"
   check client "$dir/client.log" "done"
@@ -141,19 +158,30 @@ run() {
   check peer "$dir/peer.log" "data 8 4"
   check peer "$dir/peer.log" "sent stop 8 55"
 
-  # The key exchange the handshake settled on: 4588 is X25519MLKEM768. Without this line the
-  # rest of the run says nothing about the hybrid share, whose ServerHello is the long one.
-  check peer "$dir/peer.log" "curve 4588"
-  # The frames on the peer's wire, which is where the reset this side owes a STOP_SENDING is
-  # visible: the stream it arrived on has no reader left to tell. These lines carry a timestamp,
-  # so they are looked for inside the line.
-  on_wire "$dir/peer.log" "<- &wire.ResetStreamFrame{StreamID: 0, ErrorCode: 0x2a, FinalSize: 5}"
-  on_wire "$dir/peer.log" "<- &wire.StopSendingFrame{StreamID:4, ErrorCode:0x7}"
-  on_wire "$dir/peer.log" "<- &wire.ResetStreamFrame{StreamID: 8, ErrorCode: 0x37, FinalSize: 4}"
+  case "$impl" in
+    go)
+      # The key exchange the handshake settled on: 4588 is X25519MLKEM768. Without this line the
+      # rest of the run says nothing about the hybrid share, whose ServerHello is the long one.
+      check peer "$dir/peer.log" "curve 4588"
+      # The frames on the peer's wire, which is where the reset this side owes a STOP_SENDING is
+      # visible: the stream it arrived on has no reader left to tell. These lines carry a
+      # timestamp, so they are looked for inside the line.
+      on_wire "$dir/peer.log" "<- &wire.ResetStreamFrame{StreamID: 0, ErrorCode: 0x2a, FinalSize: 5}"
+      on_wire "$dir/peer.log" "<- &wire.StopSendingFrame{StreamID:4, ErrorCode:0x7}"
+      on_wire "$dir/peer.log" "<- &wire.ResetStreamFrame{StreamID: 8, ErrorCode: 0x37, FinalSize: 4}"
+      ;;
+    aioquic)
+      # This peer's application reports the stop it sent and the reset that arrives for it, which
+      # the Go peer's does not: the stream there has no reader left either.
+      check peer "$dir/peer.log" "sent reset 0 99"
+      check peer "$dir/peer.log" "reset 8 55"
+      ;;
+  esac
 }
 
-run 1280-mtu 1280
-run 1200-mtu 1200
+run go 1280-mtu 1280 7
+run go 1200-mtu 1200 7
+run aioquic aioquic none 0
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed"

@@ -150,7 +150,7 @@ jobs:
           bash scripts/http_interop.sh
 
   quic:
-    name: QUIC stream reset against quic-go
+    name: QUIC reset against quic-go and aioquic
     permissions:
       contents: read
     runs-on: ubuntu-26.04
@@ -164,13 +164,24 @@ jobs:
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
-      # The peer is a Go program; quic-go v0.55 needs 1.24 or later.
+      # The first peer is a Go program; quic-go v0.55 needs 1.24 or later, and the curve the
+      # handshake settled on is read from a field Go 1.25 added.
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.24'
+          go-version: '1.25'
           cache-dependency-path: integration/quic-reset-peer/go.sum
 
-      # Three streams, a reset and a stop in each direction, read back off the peer's own wire.
+      # The second peer is aioquic, pinned in the integration module beside it; the version is
+      # in the file so a change upstream cannot turn this red without a change here. A venv,
+      # since the system python on a current runner refuses installs of its own.
+      - name: install aioquic
+        run: |
+          python3 -m venv _venv
+          _venv/bin/pip install --quiet -r integration/aioquic-reset-peer/requirements.txt
+          echo "$PWD/_venv/bin" >> $GITHUB_PATH
+
+      # Three streams, a reset and a stop in each direction, read back off the peer's own wire —
+      # twice against quic-go, at two Initial packet sizes, and once against aioquic.
       - name: stream reset and stop
         run: |
           moon update
