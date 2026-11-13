@@ -275,19 +275,24 @@ not write, over real sockets:
 | HTTP/3 — QUIC handshake, settings with the QPACK table shut, one stream per exchange | both, where the server offers `h3` | all exchanges answered |
 | WebSocket — the upgrade, framing, ping and pong, close, invalid UTF-8, reserved bits | Autobahn's fuzzing server | 244 graded cases pass, 4 of them non-strict; no failures |
 | TLS 1.3 over TCP — handshake, certificate chain, alerts | OpenSSL, and tlsfuzzer | OpenSSL interop passes; tlsfuzzer runs in CI |
-| QUIC streams — RESET_STREAM and STOP_SENDING, with the final size and the codes | quic-go | both frames arrive at the peer with the codes sent, and the reset a STOP_SENDING owes comes back |
+| QUIC streams — RESET_STREAM and STOP_SENDING, with the final size and the codes | quic-go at two Initial packet sizes, and aioquic | both frames arrive at the peer with the codes sent, and the reset a STOP_SENDING owes comes back |
+| QUIC handshake — the hybrid key share, whose ServerHello outgrows one datagram | quic-go | negotiated X25519MLKEM768, the ServerHello reassembled from two Initial datagrams, and every exchange above still answered |
 
 `scripts/http_interop.sh` is the run behind the first four rows: it starts a server of this
 family and one in a container, and asks each of them for HTTP/1.1, HTTP/2 and HTTP/3, plus a
 WebSocket message. `scripts/ws_conformance.sh` is the fifth: it starts Autobahn's fuzzing
 server and plays its cases with this library's client, and the verdict is the server's report.
-`scripts/quic_reset.sh` is the last: three streams against a quic-go server, checked from both
-ends — what the peer's application reports, and the frames on the peer's own wire. All three are
-jobs in CI, on real sockets, on every push.
+`scripts/quic_reset.sh` is the last two: three streams against a quic-go server, checked from
+both ends — what the peer's application reports, and the frames on the peer's own wire — then
+the same three against a second implementation. All four are jobs in CI, on real sockets, on
+every push.
 
-The QUIC run offers x25519 alone. With the hybrid key share this client's ClientHello spans two
-Initial datagrams, the peer answers with a ServerHello longer than one, and the handshake does
-not finish against a peer of another implementation; that is where the next round starts.
+The quic-go peer runs twice, at a 1280-octet Initial packet size and at 1200, and reports the
+key exchange the handshake settled on. At 1200 the 1178-octet ServerHello carrying the hybrid
+share no longer fits one datagram and arrives in two, so a client that reads only the first
+would fail that run and pass the other. The aioquic run is the second implementation: a library
+that answers a STOP_SENDING with a reset of its own, carrying `NO_ERROR` rather than the code
+the application would have chosen, which is where the two peers' answers differ.
 
 The WebSocket run leaves out two sections of the suite: 9.\* measures throughput with messages
 from 64 KiB to 16 MiB, and 12.\* and 13.\* exercise permessage-deflate, which this adapter does
