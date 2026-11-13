@@ -343,13 +343,16 @@ async test "quic: what the peer says of one stream says nothing of another" {
     // The second stream is the one stopped, so a code kept anywhere but under its own number
     // lands on the first one and is what these assertions see.
     assert_true(seen.stop(stopped, 55UL))
+    // The server is parked in a blocking receive, and the client has no ACK left to send: a
+    // datagram from this side is what gives the server the turn it needs to put the frame on the
+    // wire. Without one the wait below can outlast the frame and look like a lost message.
+    quic.write(kept, b"third")
     assert_true(
       until(quic, () => {
         quic.refused(stopped) is Some(@udp.QuicRefused::Stopped(55UL))
       }),
     )
     assert_eq(quic.refused(kept), None)
-    quic.write(kept, b"third")
     assert_true(until(quic, () => seen.take(kept) == b"third"))
     // A stop is about sending, so reading the stopped stream says nothing rather than raising.
     assert_eq(quic.take(stopped), b"")
