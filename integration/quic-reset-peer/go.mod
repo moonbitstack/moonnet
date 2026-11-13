@@ -1,6 +1,6 @@
 module moonbitstack/moonnet/quic-reset-peer
 
-go 1.24
+go 1.25
 
 require github.com/quic-go/quic-go v0.55.0
 

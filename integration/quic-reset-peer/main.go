@@ -7,6 +7,11 @@
 //	stop <stream> <code>          STOP_SENDING arrived from the client
 //	sent reset <stream> <code>    this side abandoned the stream
 //	sent stop <stream> <code>     this side asked the client to stop sending
+//	curve <id>                    the key-exchange group the handshake settled on
+//
+// The curve is worth a line of its own: with the hybrid share the ServerHello is longer than one
+// Initial packet, so a client that only ever offers x25519 would pass every other check here
+// while skipping the part of the handshake this run exists for. 4588 is X25519MLKEM768.
 //
 // What the client is told to do is what an application does with those frames: abandon the reply
 // to a request it has read, stop reading a stream it has no use for, and stop a stream it cannot
@@ -50,6 +55,10 @@ func main() {
 	certFile := flag.String("cert", "", "certificate chain, PEM")
 	keyFile := flag.String("key", "", "private key, PEM")
 	host := flag.String("host", "127.0.0.1", "address to listen on")
+	// 1200 is the smallest Initial a QUIC endpoint may send, and it is what any peer that keeps to
+	// the datagram minimum will use: a ServerHello carrying the hybrid share then arrives in two
+	// datagrams, which is the reassembly this flag exists to exercise.
+	initial := flag.Int("initial", 1280, "Initial packet size, in octets")
 	flag.Parse()
 
 	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
@@ -60,7 +69,9 @@ func main() {
 		Certificates: []tls.Certificate{cert},
 		NextProtos:   []string{"moonnet-reset"},
 	}
-	listener, err := quic.ListenAddr(*host+":0", config, &quic.Config{})
+	listener, err := quic.ListenAddr(*host+":0", config, &quic.Config{
+		InitialPacketSize: uint16(*initial),
+	})
 	if err != nil {
 		log.Fatalf("listen: %v", err)
 	}
@@ -72,6 +83,7 @@ func main() {
 		log.Fatalf("accept: %v", err)
 	}
 	report("alpn %s", conn.ConnectionState().TLS.NegotiatedProtocol)
+	report("curve %d", conn.ConnectionState().TLS.CurveID)
 	for {
 		stream, err := conn.AcceptStream(context.Background())
 		if err != nil {

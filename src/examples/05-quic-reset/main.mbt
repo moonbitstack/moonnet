@@ -60,19 +60,16 @@ fn refused_line(quic : @udp.Quic, stream : UInt64) -> String? {
 ///|
 async fn run(host : String, port : Int32, ca : String, insecure : Bool) -> Unit {
   let roots = @x509.Roots::new(certs=@x509.pems(ca)[:])
-  // The hybrid key share's ServerHello is longer than one Initial packet, and this client does
-  // not complete a handshake against a peer of another implementation when it is offered; the
-  // script drives it with x25519 alone until that is fixed.
-  let tls = if insecure {
-    @tls.Client::new(
-      roots,
-      alpn=["moonnet-reset"],
-      groups=[@ext.x25519],
-      verify=@tls.Verify::Custom((_, _) => ()),
-    )
+  // The groups a client offers by default, the hybrid key share first: the ClientHello then
+  // outgrows one Initial packet and so does the ServerHello that answers it, which is the half of
+  // the handshake worth running against a peer of another implementation. `groups` would narrow
+  // both back into one packet.
+  let verify = if insecure {
+    @tls.Verify::Custom((_, _) => ())
   } else {
-    @tls.Client::new(roots, alpn=["moonnet-reset"], groups=[@ext.x25519])
+    @tls.Verify::Chain
   }
+  let tls = @tls.Client::new(roots, alpn=["moonnet-reset"], verify~)
   let quic = @udp.dial(host, port~, tls~)
   println("alpn \{quic.alpn().unwrap_or("none")}")
 

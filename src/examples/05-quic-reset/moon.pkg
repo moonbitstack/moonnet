@@ -8,7 +8,6 @@ import {
   "moonbitstack/moonnet/udp",
   "moonbitstack/mooncred/x509",
   "moonbitstack/moontls/tls",
-  "moonbitstack/moontls/ext",
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/core/env",
