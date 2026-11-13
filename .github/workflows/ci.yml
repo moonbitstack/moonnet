@@ -145,6 +145,8 @@ jobs:
       # HTTP/1.1, HTTP/2, HTTP/3 and WebSocket against nginx in a container and against a
       # server built on mooncat, over real sockets. Docker is on the runner already.
       - name: real traffic
+        env:
+          MOONNET_LIVE: '1'
         run: |
           moon update
           bash scripts/http_interop.sh

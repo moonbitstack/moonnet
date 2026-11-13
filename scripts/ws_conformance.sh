@@ -13,7 +13,8 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 port="${1:-19001}"
 agent=moonnet
 work="$(mktemp -d)"
-trap 'docker rm -f moonnet-autobahn >/dev/null 2>&1 || true; rm -rf "$work" 2>/dev/null || true' EXIT
+# Preserve the status: on a failing run the trap must not report success to CI.
+trap 'status=$?; docker rm -f moonnet-autobahn >/dev/null 2>&1 || true; rm -rf "$work" 2>/dev/null || true; exit "$status"' EXIT
 
 if [ -z "${MOONNET_NO_BUILD:-}" ]; then
   (cd "$root" && moon build --target native)

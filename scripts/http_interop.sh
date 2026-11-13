@@ -6,7 +6,11 @@
 #
 #     bash scripts/http_interop.sh
 #
-# Needs docker for the nginx half; with no docker only the mooncat half runs.
+# Needs docker for the nginx half. A local run with no docker does only the mooncat half and
+# says so; CI sets MOONNET_LIVE=1, which makes a missing container or a server that never
+# answers a failure rather than a pass with fewer checks.
+#
+#     MOONNET_LIVE=1 bash scripts/http_interop.sh
 set -uo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,9 +27,12 @@ binary() {
 }
 
 cleanup() {
+  # An EXIT trap whose last command succeeds would turn a failing run into a passing one.
+  local status=$?
   [ -n "${peer_pid:-}" ] && kill "$peer_pid" 2>/dev/null
   command -v docker >/dev/null 2>&1 && docker rm -f moonnet-nginx >/dev/null 2>&1
   rm -rf "$work"
+  exit "$status"
 }
 trap cleanup EXIT
 
@@ -34,8 +41,8 @@ if [ -z "${MOONNET_NO_BUILD:-}" ]; then
   (cd "$root/integration/mooncat-peer" && moon build --target native) || exit 1
 fi
 
-client="$(binary "$root/_build/native/debug/build/examples/01-interop" 01-interop)"
-peer="$(binary "$root/integration/mooncat-peer/_build/native/debug/build/main" main)"
+client="$(binary "$root/_build/native/debug/build/examples/01-interop" 01-interop)" || exit 1
+peer="$(binary "$root/integration/mooncat-peer/_build/native/debug/build/main" main)" || exit 1
 
 certs() {
   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -days 2 -nodes \
@@ -128,11 +135,13 @@ start_peer() {
   return 1
 }
 
-start_peer h1 && run_http mooncat https 127.0.0.1 18444 insecure
+start_peer h1 || exit 1
+run_http mooncat https 127.0.0.1 18444 insecure
 kill "$peer_pid" 2>/dev/null
 peer_pid=
 sleep 1
-start_peer h1 && run_h3 mooncat https 127.0.0.1 18444 insecure
+start_peer h1 || exit 1
+run_h3 mooncat https 127.0.0.1 18444 insecure
 kill "$peer_pid" 2>/dev/null
 peer_pid=
 
@@ -159,8 +168,26 @@ http {
 }
 CONF
   docker run -d --name moonnet-nginx -p 18080:80 -p 18443:443/tcp -p 18443:443/udp \
-    -v "$work/nginx.conf:/etc/nginx/nginx.conf:ro" -v "$work:/certs:ro" nginx:latest >/dev/null
-  sleep 3
+    -v "$work/nginx.conf:/etc/nginx/nginx.conf:ro" -v "$work:/certs:ro" nginx:latest >/dev/null || {
+    echo "the nginx container could not be started" >&2
+    exit 1
+  }
+  # The image's first answer decides readiness, not a clock: a container that is still pulling
+  # or that refused the config has to fail here, rather than make the checks below look like
+  # a defect in the client.
+  ready=""
+  for _ in $(seq 1 50); do
+    if "$client" h1 http://127.0.0.1:18080/ 2>&1 | head -1 | grep -qx "status 200"; then
+      ready=1
+      break
+    fi
+    sleep 0.2
+  done
+  if [ -z "$ready" ]; then
+    echo "nginx did not answer a request:" >&2
+    docker logs moonnet-nginx 2>&1 | tail -20 >&2
+    exit 1
+  fi
   check "nginx h1 status" "status 200" "$("$client" h1 http://127.0.0.1:18080/ 2>&1 | head -1)"
   check "nginx h1 body"   "body hello from nginx" "$("$client" h1 http://127.0.0.1:18080/ 2>&1 | sed -n 3p)"
   check "nginx h2 status" "status 200" "$("$client" h2 https://localhost:18443/ insecure 2>&1 | head -1)"
@@ -168,7 +195,11 @@ CONF
   run_h3 nginx https localhost 18443 insecure
   check "nginx h3 body" "body hello from nginx" "$(cat "$work/h3.body")"
 else
-  echo "skip nginx: no docker here"
+  if [ -n "${MOONNET_LIVE:-}" ]; then
+    echo "MOONNET_LIVE is set, but docker is not available: the nginx half did not run" >&2
+    exit 1
+  fi
+  echo "skip nginx: no docker here (set MOONNET_LIVE=1 to require it)"
 fi
 
 if [ "$failures" -ne 0 ]; then

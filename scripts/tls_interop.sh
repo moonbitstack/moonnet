@@ -15,7 +15,9 @@ root=$(dirname "$here")
 peer="$root/_build/native/debug/build/examples/tls-peer/tls-peer.exe"
 test -x "$peer" || { echo "build the peer first: moon build --target native"; exit 2; }
 work=$(mktemp -d)
-trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$work"' EXIT
+# Preserve the status: an EXIT trap that ends with a successful rm would otherwise turn a
+# failing run into a passing one.
+trap 'status=$?; kill $(jobs -p) 2>/dev/null; rm -rf "$work"; exit "$status"' EXIT
 cd "$work"
 
 # A root, an intermediate, and a leaf for each key type, all for localhost.

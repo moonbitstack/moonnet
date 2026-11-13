@@ -28,8 +28,11 @@ stop_peer() {
 }
 
 cleanup() {
+  # An EXIT trap whose last command succeeds would turn a failing run into a passing one.
+  local status=$?
   stop_peer
   rm -rf "$work"
+  exit "$status"
 }
 trap cleanup EXIT
 
@@ -44,7 +47,7 @@ binary() {
 if [ -z "${MOONNET_NO_BUILD:-}" ]; then
   (cd "$root" && moon build src/examples/05-quic-reset --target native) || exit 1
 fi
-client="$(binary "$root/_build/native/debug/build/examples/05-quic-reset" 05-quic-reset)"
+client="$(binary "$root/_build/native/debug/build/examples/05-quic-reset" 05-quic-reset)" || exit 1
 
 (cd "$root/integration/quic-reset-peer" && go build -o "$work/peer-go" .) || exit 1
 

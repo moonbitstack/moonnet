@@ -18,7 +18,9 @@ python=${PYTHON:-python3}
 # The scripts run from inside the checkout, so a relative interpreter path is made absolute.
 [[ "$python" != */* ]] || python="$(cd "$(dirname "$python")" && pwd)/$(basename "$python")"
 work=$(mktemp -d)
-trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$work"' EXIT
+# Preserve the status: an EXIT trap that ends with a successful rm would otherwise turn a
+# failing run into a passing one.
+trap 'status=$?; kill $(jobs -p) 2>/dev/null; rm -rf "$work"; exit "$status"' EXIT
 cd "$work"
 
 for k in "rsa rsa:2048" "ec ec -pkeyopt ec_paramgen_curve:P-256" "ed ed25519"; do
