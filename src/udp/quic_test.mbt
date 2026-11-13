@@ -329,3 +329,97 @@ async test "quic: a stream this side abandoned takes no more writing" {
     quic.close()
   })
 }
+
+///|
+async test "quic: what the peer says of one stream says nothing of another" {
+  with_quic((port, seen) => {
+    let quic = connect(port)
+    let kept = quic.open_bi()
+    let stopped = quic.open_bi()
+    quic.write(kept, b"first")
+    quic.write(stopped, b"second")
+    assert_true(until(quic, () => seen.take(kept) == b"first"))
+    assert_true(until(quic, () => seen.take(stopped) == b"second"))
+    // The second stream is the one stopped, so a code kept anywhere but under its own number
+    // lands on the first one and is what these assertions see.
+    assert_true(seen.stop(stopped, 55UL))
+    assert_true(
+      until(quic, () => {
+        quic.refused(stopped) is Some(@udp.QuicRefused::Stopped(55UL))
+      }),
+    )
+    assert_eq(quic.refused(kept), None)
+    quic.write(kept, b"third")
+    assert_true(until(quic, () => seen.take(kept) == b"third"))
+    // A stop is about sending, so reading the stopped stream says nothing rather than raising.
+    assert_eq(quic.take(stopped), b"")
+    assert_eq(quic.refused(stopped), Some(@udp.QuicRefused::Stopped(55UL)))
+    let raised = try {
+      quic.write(stopped, b"more")
+      None
+    } catch {
+      e => Some(e)
+    }
+    assert_eq(raised, Some(@udp.QuicRefused::Stopped(55UL)))
+    quic.close()
+  })
+}
+
+///|
+async test "quic: a stream this side has only written on is not over" {
+  with_quic((port, seen) => {
+    let quic = connect(port)
+    let stream = quic.open_bi()
+    quic.write(stream, b"request", fin=true)
+    assert_true(until(quic, () => seen.take(stream) == b"request"))
+    // The codec has no record of a stream nothing has arrived on and calls it ended; a finish
+    // on this side's half says nothing about the peer's.
+    assert_false(quic.ended(stream))
+    assert_eq(quic.refused(stream), None)
+    assert_true(seen.write(stream, b"reply"))
+    let got : Ref[Bytes] = Ref(b"")
+    assert_true(
+      until(quic, () => {
+        got.val = got.val + (quic.take(stream) catch { _ => b"" })
+        got.val.length() > 0
+      }),
+    )
+    assert_eq(got.val, b"reply")
+    assert_false(quic.ended(stream))
+    quic.close()
+  })
+}
+
+///|
+async test "quic: a closed connection refuses every frame" {
+  with_quic((port, seen) => {
+    let quic = connect(port)
+    let stream = quic.open_bi()
+    quic.write(stream, b"hello")
+    quic.close()
+    let wrote = try {
+      quic.write(stream, b"late")
+      None
+    } catch {
+      e => Some(e)
+    }
+    assert_eq(wrote, Some(@udp.QuicRefused::Closed))
+    let reset = try {
+      quic.reset(stream)
+      None
+    } catch {
+      e => Some(e)
+    }
+    assert_eq(reset, Some(@udp.QuicRefused::Closed))
+    let stopped = try {
+      quic.stop(stream)
+      None
+    } catch {
+      e => Some(e)
+    }
+    assert_eq(stopped, Some(@udp.QuicRefused::Closed))
+    // A turn of a closed connection sends nothing and reports nothing rather than raising.
+    assert_false(quic.step(timeout=1) catch { _ => true })
+    ignore(seen)
+  })
+}
