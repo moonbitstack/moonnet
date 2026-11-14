@@ -9,9 +9,13 @@ import {
 }
 
 // Values
+pub let attempt_delay : Int32
+
 pub async fn bind(host? : String, port? : Int32) -> Socket
 
-pub async fn dial(String, port~ : Int32, tls~ : @tls.Client, idle? : UInt64) -> Quic raise QuicRefused
+pub async fn dial(String, port~ : Int32, tls~ : @tls.Client, idle? : UInt64, attempt_delay? : Int32) -> Quic raise QuicRefused
+
+pub async fn dial_addrs(ArrayView[@socket.Addr], host~ : String, tls~ : @tls.Client, idle? : UInt64, attempt_delay? : Int32) -> Quic raise QuicRefused
 
 pub fn now() -> Int64
 

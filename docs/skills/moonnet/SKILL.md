@@ -166,6 +166,9 @@ STREAM_STATE_ERROR at the peer, so ask for a stop on a stream that is in use.
 - `read` returns `None` at the end of a body; keep calling it until then, or use
   `@spec.read_to_end(conn, stream, limit=...)` so a hostile peer cannot make you hold an
   unbounded body.
+- `@udp.dial` tries IPv6 first and IPv4 `attempt_delay` (250 ms) later, keeping whichever
+  handshake completes first; with addresses already in hand, `@udp.dial_addrs` tries them in
+  the order given.
 - The sockets exist on the native and wasm backends. On js and wasm-gc the packages that drive
   them are empty, so a program that dials is native or wasm.
 - The default port is 12000 for a server this library starts, and 443/80 for `connect(url)`.

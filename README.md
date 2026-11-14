@@ -188,6 +188,12 @@ async fn quic_session(tls : @tls.Client) -> Unit raise @udp.QuicRefused {
 }
 ```
 
+A name with both an IPv6 and an IPv4 address is dialled as RFC 8305 says: IPv6 first, IPv4 as
+well once `attempt_delay` (250 ms) passes without an answer or the first attempt fails, and the
+first handshake to complete is kept while the other is closed. A path that drops datagrams then
+costs one delay rather than a handshake timeout. `dial_addrs` does the same for addresses
+already looked up, in the order given.
+
 `Quic::step` is one turn of the connection — send what is queued, take one datagram in — and
 `take`, `ended`, `open_bi` and `open_uni` read what came of it. Reading is a poll rather than a
 blocking call because the same connection also carries control and QPACK streams.

@@ -426,3 +426,90 @@ async test "quic: a closed connection refuses every frame" {
     ignore(seen)
   })
 }
+
+///|
+/// The fixture client's TLS settings.
+fn fixture_tls() -> @tls.Client {
+  client_config(alpn=["moonnet-test"]) catch {
+    _ => abort("the fixture certificate was refused")
+  }
+}
+
+///|
+async test "quic dial: an address that never answers costs one attempt delay" {
+  with_quic((port, _) => {
+    // A path that drops datagrams: a socket that takes them in and answers none.
+    let hole = @udp.bind(host="127.0.0.1", port=0)
+    defer hole.close()
+    let server = @socket.Addr::parse("127.0.0.1:\{port}") catch {
+      _ => abort("a literal address")
+    }
+    let begin = @async.now()
+    let quic = @udp.dial_addrs(
+      [hole.addr(), server],
+      host="127.0.0.1",
+      tls=fixture_tls(),
+      attempt_delay=300,
+    )
+    let took = @async.now() - begin
+    assert_eq(quic.to, server)
+    assert_true(took >= 290L)
+    // Well under the twelve seconds the silent address alone would take to give up.
+    assert_true(took < 5000L)
+    quic.close()
+  })
+}
+
+///|
+async test "quic dial: an address that fails at once is passed over without waiting" {
+  with_quic((port, _) => {
+    // Sending to the limited broadcast address without asking for broadcast is refused by the
+    // system at once.
+    let refused = @socket.Addr::parse("255.255.255.255:\{port}") catch {
+      _ => abort("a literal address")
+    }
+    let server = @socket.Addr::parse("127.0.0.1:\{port}") catch {
+      _ => abort("a literal address")
+    }
+    let begin = @async.now()
+    let quic = @udp.dial_addrs(
+      [refused, server],
+      host="127.0.0.1",
+      tls=fixture_tls(),
+      attempt_delay=5000,
+    )
+    assert_eq(quic.to, server)
+    assert_true(@async.now() - begin < 2500L)
+    quic.close()
+  })
+}
+
+///|
+async test "quic dial: when both answer, the first handshake is kept and the dial returns once" {
+  with_quic((port, _) => {
+    let server = @socket.Addr::parse("127.0.0.1:\{port}") catch {
+      _ => abort("a literal address")
+    }
+    let quic = @udp.dial_addrs(
+      [server, server],
+      host="127.0.0.1",
+      tls=fixture_tls(),
+      attempt_delay=1,
+    )
+    assert_eq(quic.to, server)
+    assert_eq(quic.alpn(), Some("moonnet-test"))
+    quic.close()
+  })
+}
+
+///|
+async test "quic dial: no address is a refusal, not a wait" {
+  let tried = try
+    @udp.dial_addrs([], host="127.0.0.1", tls=fixture_tls())
+  catch {
+    e => Err(e)
+  } noraise {
+    _ => Ok(())
+  }
+  assert_true(tried is Err(Broken(_)))
+}

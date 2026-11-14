@@ -48,21 +48,148 @@ fn entropy(n : Int32) -> Bytes {
 }
 
 ///|
+/// How long a QUIC dial gives one address before it tries the next one as well: the
+/// connection attempt delay of RFC 8305 §5, at the 250 ms §8 recommends.
+pub let attempt_delay : Int32 = 250
+
+///|
 /// Connect to `host:port` and shake hands. The connection is returned once the handshake is
 /// confirmed; `tls` offers `h3` or whatever ALPN the peer is expected to choose.
+///
+/// A name with both an IPv6 and an IPv4 address is dialled as RFC 8305 says: IPv6 first, IPv4
+/// as well once `attempt_delay` milliseconds pass without an answer or the first attempt fails,
+/// and the first handshake to complete is kept. A path that drops datagrams costs one delay,
+/// not a handshake timeout. A name with one address is dialled as it always was.
 pub async fn dial(
   host : String,
   port~ : Int32,
   tls~ : @tls.Client,
   idle~ : UInt64 = 30000UL,
+  attempt_delay~ : Int32 = attempt_delay,
 ) -> Quic raise QuicRefused {
-  let to = @socket.Addr::resolve(host, port~) catch {
-    e => raise QuicRefused::Broken("\{e}")
+  race(addresses(host, port), host, tls, idle, attempt_delay)
+}
+
+///|
+/// `dial` to addresses already looked up, such as the ones a service registry gives: they are
+/// tried in the order given, with the same delay between attempts, and `host` is the name the
+/// certificate is checked against.
+pub async fn dial_addrs(
+  addrs : ArrayView[@socket.Addr],
+  host~ : String,
+  tls~ : @tls.Client,
+  idle~ : UInt64 = 30000UL,
+  attempt_delay~ : Int32 = attempt_delay,
+) -> Quic raise QuicRefused {
+  guard !addrs.is_empty() else {
+    raise QuicRefused::Broken("no address to dial")
   }
+  race(addrs.to_owned(), host, tls, idle, attempt_delay)
+}
+
+///|
+/// The addresses `host` names, IPv6 first (RFC 8305 §4), one of each family at most.
+async fn addresses(
+  host : String,
+  port : Int32,
+) -> Array[@socket.Addr] raise QuicRefused {
+  let found : Array[@socket.Addr] = []
+  for family in [@socket.OnlyV6, @socket.OnlyV4] {
+    let addr = @socket.Addr::resolve(host, port~, protocol=family) catch {
+      _ => continue
+    }
+    if !found.contains(addr) {
+      found.push(addr)
+    }
+  }
+  if found.is_empty() {
+    // Neither family answered on its own; the plain lookup says why.
+    found.push(
+      @socket.Addr::resolve(host, port~) catch {
+        e => raise QuicRefused::Broken("\{e}")
+      },
+    )
+  }
+  found
+}
+
+///|
+/// Shake hands with the first of `addrs` to answer. The first attempt starts at once; each
+/// further one starts when `delay` has passed since the one before, or sooner when an attempt
+/// fails. The first handshake to complete wins and the others are closed; when every attempt
+/// fails, the last failure is raised.
+async fn race(
+  addrs : Array[@socket.Addr],
+  host : String,
+  tls : @tls.Client,
+  idle : UInt64,
+  delay : Int32,
+) -> Quic raise QuicRefused {
+  if addrs.length() == 1 {
+    return attempt(addrs[0], host, tls, idle)
+  }
+  let failures : Array[QuicRefused] = []
+  let failed = @cond_var.Cond()
+  @async.with_task_group(g => {
+    for i, to in addrs {
+      g.spawn_bg(allow_failure=true, () => {
+        let link = attempt(to, host, tls, idle) catch {
+          e => {
+            failures.push(e)
+            failed.broadcast()
+            return
+          }
+        }
+        g.return_immediately(link)
+      })
+      if i + 1 < addrs.length() {
+        let before = failures.length()
+        ignore(
+          @async.with_timeout_opt(delay, () => {
+            while failures.length() == before {
+              failed.wait()
+            }
+          }),
+        )
+      }
+    }
+    while failures.length() < addrs.length() {
+      failed.wait()
+    }
+    raise failures[failures.length() - 1]
+  }) catch {
+    e => raise refusal(e)
+  }
+}
+
+///|
+/// An error out of a task group, as the refusal it carries.
+fn refusal(e : Error) -> QuicRefused {
+  match e {
+    QuicRefused::Timeout => Timeout
+    Broken(why) => Broken(why)
+    Closed => Closed
+    Reset(code) => Reset(code)
+    Stopped(code) => Stopped(code)
+    _ => Broken("\{e}")
+  }
+}
+
+///|
+/// One handshake with one address. The socket is closed on the way out of a handshake that
+/// did not complete, including one cancelled because another address answered first.
+async fn attempt(
+  to : @socket.Addr,
+  host : String,
+  tls : @tls.Client,
+  idle : UInt64,
+) -> Quic raise QuicRefused {
   // The socket has to be of the same family as the peer, or the kernel refuses the datagram.
   let socket = bind(host=if to.is_ipv6() { "::" } else { "0.0.0.0" }, port=0) catch {
     e => raise QuicRefused::Broken("\{e}")
   }
+  // A handshake that does not complete, or that another address won, leaves no socket behind.
+  errdefer socket.close()
   let scid = entropy(8)
   let dcid = entropy(8)
   let params = @conn.Limits::new(
@@ -101,7 +228,6 @@ pub async fn dial(
   let mut rounds = 0
   while !link.client.is_connected() {
     if rounds > 600 {
-      link.socket.close()
       raise QuicRefused::Timeout
     }
     let _ = link.step(timeout=20)

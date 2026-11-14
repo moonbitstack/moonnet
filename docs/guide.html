@@ -288,6 +288,7 @@ while quic.step(timeout=200) {
 }</code></pre>
     </div>
     <p>Reading is a poll rather than a blocking call because one QUIC connection carries control and QPACK streams beside the exchange's own; a blocking read would hold those back. The same socket is what HTTP/3 is built on.</p>
+    <p>A name with both an IPv6 and an IPv4 address is dialled as RFC 8305 says: IPv6 first, IPv4 as well once <code>attempt_delay</code> (250 ms) passes without an answer or the first attempt fails, and the first handshake to complete is kept while the other is closed. A path that drops datagrams costs one delay rather than a handshake timeout. <code>dial_addrs</code> does the same for addresses already looked up, in the order given.</p>
     <p>A stream that is not going to be finished is abandoned rather than left hanging, and the code travels with it: <code>reset</code> sends RESET_STREAM with what this side still held, <code>stop</code> sends STOP_SENDING. Both are control frames, so a lost packet carrying one is sent again.</p>
     <div class="codeblock">
       <div class="codeblock__bar"><span>abandon.mbt</span><button class="copy" type="button">copy</button></div>
