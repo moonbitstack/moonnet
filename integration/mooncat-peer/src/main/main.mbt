@@ -70,10 +70,7 @@ async fn main {
   let port = @string.parse_int(args[1]) catch {
     _ => 12000
   }
-  let cert : @mooncat.TlsCert = {
-    certificate_file: args[2],
-    private_key_file: args[3],
-  }
+  let cert = @mooncat.TlsCert::pem(args[2], args[3])
   let config = @mooncat.Config::new(host="127.0.0.1", port~)
   // The HTTP/3 entry point serves TLS over TCP beside it, on the same port: HTTP/1.1, HTTP/2
   // and WebSocket on the one, HTTP/3 on the other.

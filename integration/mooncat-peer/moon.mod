@@ -11,8 +11,8 @@ license = "Apache-2.0"
 description = "A server built on mooncat, for moonnet's interop runs."
 
 import {
-  "moonbitstack/mooncat@0.19.5",
-  "moonbitstack/moonasgi@0.10.6",
+  "moonbitstack/mooncat@0.21.0",
+  "moonbitstack/moonasgi@0.11.2",
   "moonbitlang/async@0.22.5",
 }
 
