@@ -47,7 +47,7 @@ cases=(
   "keyshare-omitted 4433" "keyupdate 4433" "large-number-of-extensions 4433" "legacy-version 4433"
   "lengths 4436" "minerva 4434" "multiple-ccs-messages 4433" "nociphers 4433"
   "no-unknown-groups 4438 --groups x25519,secp256r1,secp384r1,secp521r1,x448"
-  "obsolete-curves 4433 --relaxed" "pkcs-signature 4433" "record-layer-limits 4433"
+  "obsolete-curves 4433" "pkcs-signature 4433" "record-layer-limits 4433"
   "record-padding 4433" "rsa-signatures 4433" "serverhello-random 4437" "shuffled-extentions 4433"
   "signature-algorithms 4433" "unencrypted-alert 4433" "unrecognised-groups 4437"
   "zero-content-type 4433" "zero-length-data 4433"
