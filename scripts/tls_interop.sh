@@ -105,7 +105,9 @@ for key in ec256 ec384 rsa2048 rsa4096 ed25519; do
 done
 client_case "client: P-521 key" ok "suite=" $(chain ec521) -www -- get=/
 client_case "client: Ed448 key, scheme not offered" refused "handshake_failure" $(chain ed448) -www -- get=/
-client_case "client: RSASSA-PSS key, scheme not offered" refused "handshake_failure" $(chain rsapss) -www -- get=/
+# moontls has served and checked RSASSA-PSS certificates since 0.10.0, its default schemes naming
+# rsa_pss_pss_*; a client that leaves them out is the case that has to be refused.
+client_case "client: RSASSA-PSS key" ok "suite=" $(chain rsapss) -www -- get=/
 for group in X25519 P-256 P-384 P-521 X448; do
   client_case "client: server group $group" ok "suite=" $(chain ec256) -groups $group -www -- get=/
 done
@@ -307,14 +309,8 @@ client_case "client 1.2: a 1024-bit DHE prime" refused "insufficient_security" $
 unset lines
 server_case "server: only ECDSA P-384 accepted, P-256 key" "alert|error" ec256 -- -sigalgs ecdsa_secp384r1_sha384
 
-# Go and rustls load neither; moontls refuses an RSASSA-PSS key at configuration.
-port=$((port + 1))
-out=$(timeout 10 "$peer" server $port rsapss.pem rsapss.key 2>&1 | head -1)
-if [[ "$out" == "bad server configuration"* ]]; then
-  report PASS "server: RSASSA-PSS key refused" "$out"
-else
-  report FAIL "server: RSASSA-PSS key refused" "got: $out"
-fi
+server_case "server: RSASSA-PSS key" "$echoed" rsapss --
+server_case "server: RSASSA-PSS key, client without its schemes" "alert|handshake failure|error" rsapss -- -sigalgs rsa_pss_rsae_sha256
 
 echo
 echo "$pass passed, $fail failed"
