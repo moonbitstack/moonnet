@@ -204,7 +204,7 @@ async test "h2: a body larger than the flow-control window arrives whole" {
     // Read the body as it arrives, so the adapter hands the window back rather than
     // stalling after the first 64 KiB.
     let mut total = 0
-    let got = @buffer.Buffer::Buffer(size_hint=size)
+    let got = @buffer.Buffer::Buffer(capacity=size)
     while conn.read(stream) is Some(piece) {
       total += piece.length()
       got.write_bytes(piece)
@@ -224,7 +224,7 @@ async test "h2: a request body streamed in pieces reaches the peer" {
     if hello.length() > 0 {
       conn.write(hello)
     }
-    let held = @buffer.Buffer::Buffer(size_hint=64)
+    let held = @buffer.Buffer::Buffer(capacity=64)
     let opened : Ref[Int32] = Ref(0)
     while conn.read_some() is Some(bytes) {
       h2.receive(bytes)

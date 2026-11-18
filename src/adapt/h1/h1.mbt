@@ -117,9 +117,7 @@ fn Conn::available(self : Conn) -> Int32 {
 /// Read more from the socket onto what is held; `false` at the end of the peer's stream.
 async fn Conn::fill(self : Conn) -> Bool {
   guard self.sock.read_some() is Some(more) else { return false }
-  let buffer = @buffer.Buffer::Buffer(
-    size_hint=self.available() + more.length(),
-  )
+  let buffer = @buffer.Buffer::Buffer(capacity=self.available() + more.length())
   buffer.write_bytesview(self.view())
   buffer.write_bytes(more)
   self.held = buffer.to_bytes()

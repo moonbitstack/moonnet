@@ -45,7 +45,9 @@ async fn app(
       let line = if http.path == "/echo" {
         echo
       } else {
-        @utf8.encode("\{http.http_version} \{http.http_method} \{http.path} \{held}\n")
+        @utf8.encode(
+          "\{http.http_version} \{http.http_method} \{http.path} \{held}\n",
+        )
       }
       send(
         @moonasgi.Event::HttpResponseStart(
@@ -67,9 +69,7 @@ async fn main {
     println("usage: mooncat-peer <port> <chain.pem> <key.pem>")
     return
   }
-  let port = @string.parse_int(args[1]) catch {
-    _ => 12000
-  }
+  let port = @string.parse_int(args[1]) catch { _ => 12000 }
   let cert = @mooncat.TlsCert::pem(args[2], args[3])
   let config = @mooncat.Config::new(host="127.0.0.1", port~)
   // The HTTP/3 entry point serves TLS over TCP beside it, on the same port: HTTP/1.1, HTTP/2

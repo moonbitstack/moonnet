@@ -54,7 +54,7 @@ fn suites12_of(names : Array[String]?) -> Array[@record.Suite12]? {
       ["all"] => @record.all12
       codes =>
         codes.map(text => {
-          let code = @string.parse_int(text, base=16) catch {
+          let code = @string.parse_int(text, radix=16) catch {
             _ => abort("not a suite code: " + text)
           }
           match @record.Suite12::of(code) {

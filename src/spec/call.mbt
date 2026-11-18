@@ -20,7 +20,7 @@ pub async fn read_to_end(
   stream : Stream,
   limit~ : Int32 = 16384 * 1024,
 ) -> Bytes {
-  let buffer = @buffer.Buffer::Buffer(size_hint=1024)
+  let buffer = @buffer.Buffer::Buffer(capacity=1024)
   while conn.read(stream) is Some(chunk) {
     if buffer.length() + chunk.length() > limit {
       raise Refused::Unsupported(
